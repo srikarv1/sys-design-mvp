@@ -248,7 +248,7 @@ export default function ClaudeUsageStats({ isVisible, onClose }: ClaudeUsageStat
           justifyContent: 'flex-end'
         }}>
           <button
-            onClick={() => {
+            onClick={async () => {
               // Test API key
               const apiKey = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY;
               console.log('🧪 Test API Key:', {
@@ -256,7 +256,10 @@ export default function ClaudeUsageStats({ isVisible, onClose }: ClaudeUsageStat
                 keyLength: apiKey?.length || 0,
                 keyStart: apiKey?.substring(0, 10) || 'none'
               });
-              alert(`API Key Status: ${apiKey ? 'Found' : 'Missing'}\nLength: ${apiKey?.length || 0}\nStart: ${apiKey?.substring(0, 10) || 'none'}`);
+              
+              // Test Claude API
+              const claudeWorking = await claudeFeedbackService.testClaudeAPI();
+              alert(`API Key Status: ${apiKey ? 'Found' : 'Missing'}\nLength: ${apiKey?.length || 0}\nStart: ${apiKey?.substring(0, 10) || 'none'}\n\nClaude API Test: ${claudeWorking ? 'SUCCESS' : 'FAILED'}`);
             }}
             style={{
               padding: `${theme.spacing.sm} ${theme.spacing.md}`,
@@ -270,7 +273,7 @@ export default function ClaudeUsageStats({ isVisible, onClose }: ClaudeUsageStat
               transition: theme.transitions.fast
             }}
           >
-            Test API Key
+            Test Claude API
           </button>
           <button
             onClick={() => {
@@ -293,6 +296,25 @@ export default function ClaudeUsageStats({ isVisible, onClose }: ClaudeUsageStat
             }}
           >
             {isTestMode ? 'Disable Test Mode' : 'Enable Test Mode'}
+          </button>
+          <button
+            onClick={() => {
+              claudeFeedbackService.forceTestMode();
+              alert('Test mode force enabled! This will bypass all hard checks.');
+            }}
+            style={{
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              backgroundColor: theme.colors.warning[600],
+              color: theme.colors.white,
+              border: 'none',
+              borderRadius: theme.borderRadius.md,
+              fontSize: theme.typography.fontSize.sm,
+              fontWeight: theme.typography.fontWeight.medium,
+              cursor: 'pointer',
+              transition: theme.transitions.fast
+            }}
+          >
+            Force Test Mode
           </button>
           <button
             onClick={() => {

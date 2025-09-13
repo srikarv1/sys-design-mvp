@@ -16,6 +16,7 @@ interface RightPanelProps {
   selectedNode: Node | null;
   onUpdateNode: (nodeId: string, params: any) => void;
   onDeleteNode: (nodeId: string) => void;
+  onAddComponentClick?: (typeId: string) => void;
   currentTraffic: TrafficProfile;
   onTrafficChange: (traffic: TrafficProfile) => void;
   onChaosEventTrigger: (event: ChaosEvent) => void;
@@ -35,6 +36,7 @@ export default function RightPanel({
   selectedNode,
   onUpdateNode,
   onDeleteNode,
+  onAddComponentClick,
   currentTraffic,
   onTrafficChange,
   onChaosEventTrigger,
@@ -61,17 +63,17 @@ export default function RightPanel({
   };
 
   const tabs = [
-    { id: 'components' as TabType, label: 'Components', icon: '⚙' },
-    { id: 'config' as TabType, label: 'Config', icon: '⚙' },
+    { id: 'components' as TabType, label: 'Components', icon: '🧩' },
+    { id: 'config' as TabType, label: 'Config', icon: '⚙️' },
     { id: 'traffic' as TabType, label: 'Traffic', icon: '📊' },
-    { id: 'chaos' as TabType, label: 'Chaos', icon: '⚠' },
+    { id: 'chaos' as TabType, label: 'Chaos', icon: '⚠️' },
     { id: 'metrics' as TabType, label: 'Results', icon: '📈' }
   ];
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'components':
-        return <ComponentPalette components={components} />;
+        return <ComponentPalette components={components} onAddComponent={onAddComponentClick} />;
       case 'config':
         return (
           <ComponentConfigPanel 
@@ -175,7 +177,7 @@ export default function RightPanel({
             }}
           >
             <span style={{ fontSize: '16px' }}>{tab.icon}</span>
-            <span style={{ fontSize: '10px' }}>{tab.label.split(' ')[1]}</span>
+            <span style={{ fontSize: '10px' }}>{tab.label}</span>
           </button>
         ))}
       </div>

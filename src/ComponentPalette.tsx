@@ -4,9 +4,10 @@ import { theme } from './styles/theme';
 
 interface ComponentPaletteProps {
   components: ComponentType[];
+  onAddComponent?: (typeId: string) => void;
 }
 
-const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
+const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components, onAddComponent }) => {
   const onDragStart = (event: React.DragEvent, componentType: string) => {
     event.dataTransfer.setData('application/reactflow', componentType);
     event.dataTransfer.effectAllowed = 'move';
@@ -90,6 +91,7 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
                   e.currentTarget.style.boxShadow = `0 4px 12px ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]}30`;
                   e.currentTarget.style.cursor = 'grab';
                 }}
+                onClick={() => onAddComponent && onAddComponent(component.id)}
                 title={component.description}
               >
                 <span>{component.name}</span>

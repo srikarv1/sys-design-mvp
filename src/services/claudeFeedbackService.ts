@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SimulationResult } from '../simulate';
 import { Challenge } from '../sampleChallenges';
-import { PlacedComponent, Connection } from '../componentsSchema';
+import { PlacedComponent, Connection, components as componentCatalog } from '../componentsSchema';
 
 // Initialize Claude client
 const anthropic = new Anthropic({
@@ -10,7 +10,6 @@ const anthropic = new Anthropic({
 });
 
 export interface ClaudeFeedback {
-  score: number;
   pros: string[];
   cons: string[];
   detailedAnalysis: string;
@@ -39,7 +38,8 @@ class ClaudeFeedbackService {
   private requestCount = 0;
   private readonly MAX_REQUESTS_PER_SESSION = 10; // Limit to conserve credits
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-  private testMode = false; // Test mode to bypass hard checks
+  private testMode = true; // Test mode to bypass hard checks
+  private readonly PROMPT_VERSION = 'v2';
 
   /**
    * Check if API key is configured
@@ -51,7 +51,8 @@ class ClaudeFeedbackService {
       hasKey: !!apiKey,
       keyLength: apiKey?.length || 0,
       keyStart: apiKey?.substring(0, 10) || 'none',
-      keyEnd: apiKey?.substring(-10) || 'none'
+      keyEnd: apiKey?.substring(-10) || 'none',
+      isValid: !!(apiKey && apiKey.trim() && !apiKey.includes('your_anthropic_api_key_here'))
     });
     return !!(apiKey && apiKey.trim() && !apiKey.includes('your_anthropic_api_key_here'));
   }
@@ -69,26 +70,6 @@ class ClaudeFeedbackService {
     // Check if API key is configured
     if (!this.isApiKeyConfigured()) {
       console.warn('Claude API key not configured');
-      return false;
-    }
-
-    // Don't make API call if system is too simple
-    if (analysis.componentCount < 3) {
-      console.log('🚫 Hard check failed: Need 3+ components, have', analysis.componentCount);
-      return false;
-    }
-
-    // Don't make API call if missing critical components
-    if (!analysis.hasDatabase && challenge.mustHaves.some(have => 
-      have.toLowerCase().includes('database') || have.toLowerCase().includes('db')
-    )) {
-      console.log('🚫 Hard check failed: Missing required database component');
-      return false;
-    }
-
-    // Don't make API call if system is too basic
-    if (analysis.estimatedComplexity === 'simple' && analysis.componentCount < 5) {
-      console.log('🚫 Hard check failed: Simple system needs 5+ components, have', analysis.componentCount);
       return false;
     }
 
@@ -158,7 +139,7 @@ class ClaudeFeedbackService {
    */
   private generateCacheKey(components: PlacedComponent[], challenge: Challenge): string {
     const componentIds = components.map(c => c.typeId).sort().join(',');
-    return `${challenge.id}-${componentIds}`;
+    return `${this.PROMPT_VERSION}-${challenge.id}-${componentIds}`;
   }
 
   /**
@@ -174,7 +155,9 @@ class ClaudeFeedbackService {
       challenge: challenge.title,
       componentCount: components.length,
       connectionCount: connections.length,
-      score: simulationResult.score
+      score: simulationResult.score,
+      testMode: this.testMode,
+      requestCount: this.requestCount
     });
 
     const analysis = this.analyzeSystem(components, connections);
@@ -192,7 +175,13 @@ class ClaudeFeedbackService {
     console.log('🤖 Should make API call:', shouldCall);
     
     if (!shouldCall) {
-      console.log('🤖 Using basic feedback due to hard checks');
+      console.log('🤖 Skipping Claude call due to hard checks, using basic feedback');
+      console.log('🤖 Hard check details:', {
+        testMode: this.testMode,
+        apiKeyConfigured: this.isApiKeyConfigured(),
+        requestCount: this.requestCount,
+        maxRequests: this.MAX_REQUESTS_PER_SESSION
+      });
       return this.generateBasicFeedback(analysis, challenge, simulationResult);
     }
 
@@ -209,6 +198,12 @@ class ClaudeFeedbackService {
       return feedback;
     } catch (error) {
       console.error('🤖 Claude API error:', error);
+      console.log('🤖 Error details:', {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorType: typeof error,
+        stack: error instanceof Error ? error.stack : 'No stack'
+      });
+      console.log('🤖 Falling back to basic feedback due to API error');
       return this.generateBasicFeedback(analysis, challenge, simulationResult);
     }
   }
@@ -223,59 +218,82 @@ class ClaudeFeedbackService {
   ): ClaudeFeedback {
     const pros: string[] = [];
     const cons: string[] = [];
-    let score = simulationResult.score;
 
-    // Basic analysis
+    // Component-specific analysis
     if (analysis.hasDatabase) {
       pros.push('✓ Includes data persistence layer');
     } else {
-      cons.push('⚠️ Missing database layer');
-      score -= 5;
+      cons.push('⚠️ Missing database layer - data cannot be stored persistently');
     }
 
     if (analysis.hasLoadBalancer) {
-      pros.push('✓ Includes load balancing');
+      pros.push('✓ Includes load balancing for traffic distribution');
     } else if (analysis.componentCount > 3) {
       cons.push('⚠️ Consider adding load balancer for scalability');
-      score -= 3;
     }
 
     if (analysis.hasCaching) {
-      pros.push('✓ Includes caching layer');
+      pros.push('✓ Includes caching layer for performance optimization');
     } else {
       cons.push('💡 Consider adding caching for performance');
     }
 
+    if (analysis.hasMonitoring) {
+      pros.push('✓ Includes monitoring and observability components');
+    } else {
+      cons.push('⚠️ Missing monitoring - system health cannot be tracked');
+    }
+
+    if (analysis.hasSecurity) {
+      pros.push('✓ Includes security components');
+    } else {
+      cons.push('⚠️ Missing security layers - system may be vulnerable');
+    }
+
     if (analysis.hasRedundancy) {
-      pros.push('✓ Shows redundancy awareness');
+      pros.push('✓ Shows redundancy awareness with multiple instances');
     } else if (analysis.componentCount > 4) {
       cons.push('⚠️ Consider adding redundancy for high availability');
-      score -= 3;
     }
 
     if (analysis.componentCount < 3) {
-      cons.push('⚠️ System is too simple for the challenge');
-      score -= 10;
+      cons.push('⚠️ System is too simple for the challenge requirements');
     }
 
-    // Grade based on score
+    // Grade based on local score
     let grade: 'A' | 'B' | 'C' | 'D' | 'F';
-    if (score >= 90) grade = 'A';
-    else if (score >= 80) grade = 'B';
-    else if (score >= 70) grade = 'C';
-    else if (score >= 60) grade = 'D';
+    if (simulationResult.score >= 90) grade = 'A';
+    else if (simulationResult.score >= 80) grade = 'B';
+    else if (simulationResult.score >= 70) grade = 'C';
+    else if (simulationResult.score >= 60) grade = 'D';
     else grade = 'F';
 
+    // More detailed analysis based on actual components
+    const componentDetails = analysis.componentCount > 0 ? 
+      `Your system has ${analysis.componentCount} components with ${analysis.connectionCount} connections. ` : 
+      'No components are currently placed. ';
+    
+    const complexityNote = analysis.estimatedComplexity === 'complex' ? 
+      'The system shows good complexity for handling the challenge requirements.' :
+      analysis.estimatedComplexity === 'moderate' ?
+      'The system has moderate complexity - consider adding more components for better coverage.' :
+      'The system is quite simple - more components may be needed for the challenge.';
+
     return {
-      score: Math.max(0, Math.min(100, score)),
       pros,
       cons,
-      detailedAnalysis: `Basic analysis: ${analysis.componentCount} components, ${analysis.connectionCount} connections. ${analysis.estimatedComplexity} complexity.`,
-      optimalSolution: `For this challenge, an optimal solution would include a load balancer, database with replication, caching layer, monitoring, and security components. Consider adding more components for better analysis.`,
+      detailedAnalysis: `${componentDetails}${complexityNote} The system ${analysis.hasDatabase ? 'includes' : 'lacks'} data persistence, ${analysis.hasLoadBalancer ? 'has' : 'needs'} load balancing, and ${analysis.hasCaching ? 'includes' : 'could benefit from'} caching.`,
+      optimalSolution: `For the "${challenge.title}" challenge, an optimal solution would include: ${challenge.mustHaves.join(', ')}, plus load balancing, database with replication, caching layer, monitoring, and security components.`,
       architectureGrade: grade,
-      costOptimization: simulationResult.metrics.cost <= challenge.budget ? 'Within budget' : 'Over budget',
-      scalabilityNotes: analysis.hasLoadBalancer ? 'Good scalability foundation' : 'Consider scalability improvements',
-      securityConsiderations: analysis.hasSecurity ? 'Security components present' : 'Consider adding security layers'
+      costOptimization: simulationResult.metrics.cost <= challenge.budget ? 
+        `Within budget ($${simulationResult.metrics.cost.toFixed(0)} ≤ $${challenge.budget})` : 
+        `Over budget ($${simulationResult.metrics.cost.toFixed(0)} > $${challenge.budget})`,
+      scalabilityNotes: analysis.hasLoadBalancer ? 
+        'Good scalability foundation with load balancing' : 
+        'Consider adding load balancers and horizontal scaling components',
+      securityConsiderations: analysis.hasSecurity ? 
+        'Security components present - good security awareness' : 
+        'Consider adding authentication, authorization, and network security layers'
     };
   }
 
@@ -284,17 +302,40 @@ class ClaudeFeedbackService {
    */
   private async callClaudeAPI(
     challenge: Challenge,
-    components: PlacedComponent[],
+    placedComponents: PlacedComponent[],
     connections: Connection[],
     simulationResult: SimulationResult,
     analysis: SystemAnalysis
   ): Promise<ClaudeFeedback> {
-    const componentDetails = components.map(c => {
-      const componentType = components.find(ct => ct.id === c.typeId);
+    const componentDetails = placedComponents.map(c => {
       return `${c.typeId} (${c.params.replicas || 1} replicas)`;
     }).join(', ');
 
-    const systemPrompt = `You are an expert system architect reviewing a system design. Provide comprehensive analysis.
+    const nodes = placedComponents.map(pc => {
+      const meta = componentCatalog.find(ct => ct.id === pc.typeId);
+      return {
+        id: pc.id,
+        typeId: pc.typeId,
+        name: meta?.name || pc.typeId,
+        category: meta?.category || 'unknown',
+        params: pc.params
+      };
+    });
+
+    const edges = connections.map(conn => ({
+      id: conn.id,
+      from: conn.fromId,
+      to: conn.toId,
+      protocol: conn.protocol,
+      capacity: conn.capacity
+    }));
+
+    const ingressNodeIds = nodes.filter(n => n.category === 'edge').map(n => n.id);
+    const storageNodeIds = nodes.filter(n => n.category === 'storage').map(n => n.id);
+
+    const topologyJson = JSON.stringify({ nodes, edges, ingressNodeIds, storageNodeIds }, null, 2);
+
+    const systemPrompt = `You are an expert system architect reviewing a system design. Provide comprehensive, topology-aware analysis. Base your reasoning ONLY on the provided topology and data.
 
 CHALLENGE: ${challenge.title}
 DESCRIPTION: ${challenge.description}
@@ -303,27 +344,29 @@ ANTI-PATTERNS: ${challenge.antiPatterns.join(', ')}
 SLA: Latency ≤ ${challenge.sla.maxLatency}ms, Availability ≥ ${(challenge.sla.minAvailability * 100).toFixed(1)}%
 BUDGET: $${challenge.budget}
 
-CURRENT DESIGN:
+CURRENT DESIGN SUMMARY:
 - Components: ${componentDetails}
-- Total Components: ${components.length}
+- Total Components: ${placedComponents.length}
 - Connections: ${connections.length}
 - Current Metrics: P95 Latency ${simulationResult.metrics.latency.p95.toFixed(1)}ms, Availability ${(simulationResult.metrics.availability * 100).toFixed(2)}%, Cost $${simulationResult.metrics.cost.toFixed(0)}
-- Current Score: ${simulationResult.score}/100
+
+TOPOLOGY (JSON):
+${topologyJson}
 
 ANALYSIS REQUIRED:
-1. Score (0-100): Be critical but fair
-2. Pros: 3-5 strengths of this design
-3. Cons: 3-5 weaknesses or missing elements
-4. Detailed Analysis: A comprehensive paragraph analyzing the overall architecture, design decisions, and how well it meets the challenge requirements
-5. Optimal Solution: A paragraph describing what an ideal solution would look like for this challenge
-6. Architecture Grade: A, B, C, D, or F
-7. Cost Optimization: Specific recommendations for cost efficiency
-8. Scalability Notes: How well this scales and what's needed for growth
-9. Security Considerations: Security aspects and recommendations
+1. Pros: 3-5 strengths grounded in the actual topology and requirements.
+2. Cons: 3-5 weaknesses or missing elements grounded in the topology.
+3. Detailed Analysis: One comprehensive paragraph referencing specific nodes/paths and how the design meets or misses requirements.
+4. Optimal Solution: One paragraph describing what an ideal solution would look like for this challenge.
+5. Architecture Grade: A, B, C, D, or F based on overall design quality.
+6. Cost Optimization: Specific recommendations for cost efficiency.
+7. Scalability Notes: How well this scales and what's needed for growth.
+8. Security Considerations: Security aspects and recommendations.
+
+RESPOND WITH ONLY A SINGLE JSON OBJECT, NO EXTRA TEXT, NO MARKDOWN, NO CODE FENCES.
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
-  "score": 85,
   "pros": ["pro1", "pro2", "pro3"],
   "cons": ["con1", "con2", "con3"],
   "detailedAnalysis": "Comprehensive paragraph analysis...",
@@ -340,6 +383,7 @@ RESPOND IN THIS EXACT JSON FORMAT:
       model: 'claude-3-haiku-20240307', // Use Haiku for cost efficiency
       max_tokens: 1500,
       temperature: 0.2,
+      system: 'Return ONLY a single JSON object matching the requested schema. Do not include any commentary, markdown, or code fences.',
       messages: [
         {
           role: 'user',
@@ -354,16 +398,23 @@ RESPOND IN THIS EXACT JSON FORMAT:
     if (content.type === 'text') {
       console.log('🤖 Claude response text:', content.text);
       try {
-        // Try to parse JSON response
+        // Try fenced JSON first
+        const fencedMatch = content.text.match(/```(?:json)?\n([\s\S]*?)\n```/i);
+        if (fencedMatch) {
+          const fenced = fencedMatch[1].trim();
+          const parsed = JSON.parse(fenced);
+          console.log('🤖 Parsed Claude fenced JSON response:', parsed);
+          return parsed;
+        }
+
+        // Then try first JSON object in the text
         const jsonMatch = content.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          // Clean the JSON string to remove control characters
           const cleanedJson = jsonMatch[0]
-            .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
-            .replace(/\n/g, '\\n') // Escape newlines
-            .replace(/\r/g, '\\r') // Escape carriage returns
-            .replace(/\t/g, '\\t'); // Escape tabs
-          
+            .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
           const parsed = JSON.parse(cleanedJson);
           console.log('🤖 Parsed Claude response:', parsed);
           return parsed;
@@ -371,8 +422,6 @@ RESPOND IN THIS EXACT JSON FORMAT:
       } catch (error) {
         console.error('Failed to parse Claude response:', error);
         console.log('Raw response:', content.text);
-        
-        // Try to extract individual fields manually as fallback
         try {
           const fallbackResponse = this.parseClaudeResponseManually(content.text);
           if (fallbackResponse) {
@@ -385,9 +434,9 @@ RESPOND IN THIS EXACT JSON FORMAT:
       }
     }
 
-    // Fallback if JSON parsing fails
-    console.warn('🤖 Using fallback feedback due to parsing error');
-    return this.generateBasicFeedback(analysis, challenge, simulationResult);
+    // If JSON parsing fails, surface the error to the caller
+    console.warn('🤖 Claude response could not be parsed');
+    throw new Error('Claude response could not be parsed');
   }
 
   /**
@@ -395,29 +444,28 @@ RESPOND IN THIS EXACT JSON FORMAT:
    */
   private parseClaudeResponseManually(text: string): ClaudeFeedback | null {
     try {
+      // If fenced, extract inner JSON
+      const fencedMatch = text.match(/```(?:json)?\n([\s\S]*?)\n```/i);
+      if (fencedMatch) {
+        text = fencedMatch[1];
+      }
       const extractField = (fieldName: string): string => {
         const regex = new RegExp(`"${fieldName}"\\s*:\\s*"([^"]*(?:\\\\.[^"]*)*)"`, 'g');
         const match = regex.exec(text);
         return match ? match[1].replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t') : '';
       };
-
       const extractArray = (fieldName: string): string[] => {
-        const regex = new RegExp(`"${fieldName}"\\s*:\\s*\\[([^\\]]+)\\]`, 'g');
+        const regex = new RegExp(`"${fieldName}"\\s*:\\s*\[([^\]]+)\]`, 'g');
         const match = regex.exec(text);
         if (!match) return [];
-        
         const arrayContent = match[1];
         const items = arrayContent.split(',').map(item => 
           item.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t')
         );
         return items;
       };
-
-      const scoreMatch = text.match(/"score"\s*:\s*(\d+)/);
       const gradeMatch = text.match(/"architectureGrade"\s*:\s*"([A-F])"/);
-
       return {
-        score: scoreMatch ? parseInt(scoreMatch[1]) : 70,
         pros: extractArray('pros'),
         cons: extractArray('cons'),
         detailedAnalysis: extractField('detailedAnalysis'),
@@ -473,6 +521,44 @@ RESPOND IN THIS EXACT JSON FORMAT:
    */
   isTestMode(): boolean {
     return this.testMode;
+  }
+
+  /**
+   * Force enable test mode for debugging
+   */
+  forceTestMode(): void {
+    this.testMode = true;
+    console.log('🧪 Test mode force enabled for debugging');
+  }
+
+  /**
+   * Test Claude API with a simple request
+   */
+  async testClaudeAPI(): Promise<boolean> {
+    try {
+      console.log('🧪 Testing Claude API...');
+      const response = await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 100,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'user',
+            content: 'Say "Hello, Claude is working!" and nothing else.'
+          }
+        ]
+      });
+
+      const content = response.content[0];
+      if (content.type === 'text') {
+        console.log('🧪 Claude API test successful:', content.text);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('🧪 Claude API test failed:', error);
+      return false;
+    }
   }
 }
 

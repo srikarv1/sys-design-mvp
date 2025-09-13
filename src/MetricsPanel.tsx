@@ -58,6 +58,7 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({
             feedback={simulationResult.claudeFeedback}
             isAvailable={simulationResult.isClaudeAnalysisAvailable}
             isLoading={isSimulating}
+            localScore={simulationResult.score}
           />
 
           {/* Overall Score */}

@@ -6,9 +6,10 @@ interface ClaudeFeedbackPanelProps {
   feedback?: ClaudeFeedback;
   isAvailable: boolean;
   isLoading: boolean;
+  localScore?: number;
 }
 
-export default function ClaudeFeedbackPanel({ feedback, isAvailable, isLoading }: ClaudeFeedbackPanelProps) {
+export default function ClaudeFeedbackPanel({ feedback, isAvailable, isLoading, localScore }: ClaudeFeedbackPanelProps) {
   if (isLoading) {
     return (
       <div style={{
@@ -54,17 +55,12 @@ export default function ClaudeFeedbackPanel({ feedback, isAvailable, isLoading }
   }
 
   if (!isAvailable || !feedback) {
-    const apiKey = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY;
-    const apiKeyConfigured = !!(apiKey && 
-      apiKey.trim() && 
-      !apiKey.includes('your_anthropic_api_key_here'));
-
     return (
       <div style={{
         padding: theme.spacing.lg,
-        background: apiKeyConfigured ? 'rgba(30, 41, 59, 0.6)' : 'rgba(239, 68, 68, 0.1)',
+        background: 'rgba(239, 68, 68, 0.1)',
         borderRadius: theme.borderRadius.xl,
-        border: `1px solid ${apiKeyConfigured ? '#334155' : '#ef4444'}`,
+        border: '1px solid #ef4444',
         marginBottom: theme.spacing.lg,
         backdropFilter: 'blur(10px)'
       }}>
@@ -82,29 +78,8 @@ export default function ClaudeFeedbackPanel({ feedback, isAvailable, isLoading }
           fontSize: theme.typography.fontSize.base,
           color: '#cbd5e1'
         }}>
-          {apiKeyConfigured 
-            ? 'Claude analysis not available. Add more components (3+) to trigger analysis.'
-            : 'Claude API key not configured. Add your API key to .env file to enable AI feedback.'
-          }
+          Could not connect to Claude
         </p>
-        {!apiKeyConfigured && (
-          <div style={{
-            marginTop: theme.spacing.md,
-            padding: theme.spacing.md,
-            background: 'rgba(30, 41, 59, 0.8)',
-            borderRadius: theme.borderRadius.lg,
-            border: '1px solid #334155'
-          }}>
-            <p style={{
-              margin: 0,
-              fontSize: theme.typography.fontSize.sm,
-              color: '#cbd5e1',
-              fontWeight: theme.typography.fontWeight.medium
-            }}>
-              Setup: Copy .env.example to .env and add your Anthropic API key
-            </p>
-          </div>
-        )}
       </div>
     );
   }
@@ -157,7 +132,7 @@ export default function ClaudeFeedbackPanel({ feedback, isAvailable, isLoading }
             color: '#cbd5e1',
             fontWeight: theme.typography.fontWeight.medium
           }}>
-            Score: {feedback.score}/100
+            Score: {localScore || 0}/100
           </span>
           <div style={{
             width: '32px',

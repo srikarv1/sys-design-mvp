@@ -63,7 +63,7 @@ export const simulate = async (challenge: Challenge, design: SystemDesign): Prom
 
   return {
     metrics,
-    score: claudeFeedback ? claudeFeedback.score : score,
+    score, // Always use computed score; do not fallback to 0 or Claude's on failure
     feedback,
     violations,
     recommendations,
@@ -222,22 +222,46 @@ function calculateScore(
   const violations: string[] = [];
   const recommendations: string[] = [];
 
-  // Check must-haves
+  // Base score for having components (proportional to component presence)
+  if (placedComponents.length === 0) {
+    score = 0;
+    violations.push('No components placed - system cannot function');
+    return { score, feedback, violations, recommendations };
+  }
+
+  // Component presence scoring (40% of total score)
+  const componentPresenceScore = Math.min(40, placedComponents.length * 4);
+  score += componentPresenceScore;
+  feedback.push(`✓ Component presence: ${placedComponents.length} components (+${componentPresenceScore} points)`);
+
+  // Connection quality scoring (20% of total score)
+  const connectionScore = Math.min(20, connections.length * 2);
+  score += connectionScore;
+  if (connections.length > 0) {
+    feedback.push(`✓ System connectivity: ${connections.length} connections (+${connectionScore} points)`);
+  } else if (placedComponents.length > 1) {
+    violations.push('Components are not connected - system cannot function');
+    score -= 10;
+  }
+
+  // Check must-haves (15% of total score)
   const componentTypes = placedComponents.map(c => 
     components.find(ct => ct.id === c.typeId)?.name || ''
   );
   
+  const mustHaveScore = Math.min(15, challenge.mustHaves.length * 5);
+  let mustHavePoints = 0;
   challenge.mustHaves.forEach(mustHave => {
     if (componentTypes.some(type => type.includes(mustHave))) {
-      score += 10;
+      mustHavePoints += 5;
       feedback.push(`✓ Included required component: ${mustHave}`);
     } else {
-      score -= 5;
       violations.push(`Missing required component: ${mustHave}`);
     }
   });
+  score += mustHavePoints;
 
-  // Check anti-patterns
+  // Check anti-patterns (penalty)
   challenge.antiPatterns.forEach(antiPattern => {
     if (componentTypes.some(type => type.includes(antiPattern))) {
       score -= 10;
@@ -245,31 +269,65 @@ function calculateScore(
     }
   });
 
-  // Check SLA compliance
+  // SLA compliance (15% of total score)
   if (metrics.latency.p95 <= challenge.sla.maxLatency) {
-    score += 20;
+    score += 8;
     feedback.push(`✓ Latency SLA met: ${metrics.latency.p95.toFixed(1)}ms ≤ ${challenge.sla.maxLatency}ms`);
   } else {
-    score -= 15;
+    score -= 5;
     violations.push(`Latency SLA violated: ${metrics.latency.p95.toFixed(1)}ms > ${challenge.sla.maxLatency}ms`);
   }
 
   if (metrics.availability >= challenge.sla.minAvailability) {
-    score += 20;
+    score += 7;
     feedback.push(`✓ Availability SLA met: ${(metrics.availability * 100).toFixed(2)}% ≥ ${(challenge.sla.minAvailability * 100).toFixed(2)}%`);
   } else {
-    score -= 15;
+    score -= 5;
     violations.push(`Availability SLA violated: ${(metrics.availability * 100).toFixed(2)}% < ${(challenge.sla.minAvailability * 100).toFixed(2)}%`);
   }
 
-  // Check budget
+  // Budget compliance (10% of total score)
   if (metrics.cost <= challenge.budget) {
-    score += 15;
+    score += 10;
     feedback.push(`✓ Budget met: $${metrics.cost.toFixed(0)} ≤ $${challenge.budget}`);
   } else {
-    score -= 10;
+    score -= 5;
     violations.push(`Budget exceeded: $${metrics.cost.toFixed(0)} > $${challenge.budget}`);
   }
+
+  // Architecture quality bonus (proportional to system complexity)
+  const hasLoadBalancer = componentTypes.some(type => 
+    type.includes('load-balancer') || type.includes('api-gateway')
+  );
+  const hasDatabase = componentTypes.some(type => 
+    type.includes('database') || type.includes('db') || type.includes('cache')
+  );
+  const hasCaching = componentTypes.some(type => 
+    type.includes('cache') || type.includes('redis') || type.includes('memcached')
+  );
+  const hasMonitoring = componentTypes.some(type => 
+    type.includes('monitoring') || type.includes('metrics') || type.includes('logging')
+  );
+
+  let architectureBonus = 0;
+  if (hasLoadBalancer) {
+    architectureBonus += 3;
+    feedback.push('✓ Load balancing present');
+  }
+  if (hasDatabase) {
+    architectureBonus += 3;
+    feedback.push('✓ Data persistence layer present');
+  }
+  if (hasCaching) {
+    architectureBonus += 2;
+    feedback.push('✓ Caching layer present');
+  }
+  if (hasMonitoring) {
+    architectureBonus += 2;
+    feedback.push('✓ Monitoring/observability present');
+  }
+
+  score += architectureBonus;
 
   // Chaos event feedback
   if (activeChaosEvents.length > 0) {

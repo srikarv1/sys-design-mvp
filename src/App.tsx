@@ -8,7 +8,6 @@ import ReactFlow, {
   Connection, 
   useNodesState, 
   useEdgesState,
-  ReactFlowProvider,
   ReactFlowInstance
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -155,11 +154,51 @@ export default function App() {
     };
 
     setNodes((nds) => nds.concat(newNode));
+    setSelectedNode(newNode);
+    setActiveRightTab('config');
   }, [reactFlowInstance, setNodes]);
 
   const getCategoryColor = (category: string) => {
     return theme.colors.components[category as keyof typeof theme.colors.components] || theme.colors.gray[500];
   };
+
+  const addComponentByTypeId = useCallback((typeId: string) => {
+    const componentType = components.find(c => c.id === typeId);
+    if (!componentType) return;
+
+    const center = reactFlowInstance?.getViewport?.() ? reactFlowInstance.project({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2
+    }) : { x: 200, y: 200 };
+
+    const newNode: Node = {
+      id: `${typeId}-${Date.now()}`,
+      type: 'default',
+      position: center,
+      data: {
+        label: componentType.name,
+        componentType: componentType,
+        params: { ...componentType.defaultParams }
+      },
+      style: {
+        background: getCategoryColor(componentType.category),
+        color: theme.colors.white,
+        border: `2px solid ${getCategoryColor(componentType.category)}`,
+        borderRadius: theme.borderRadius.lg,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semibold,
+        minWidth: '120px',
+        textAlign: 'center',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        transition: 'none'
+      }
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+    setSelectedNode(newNode);
+    setActiveRightTab('config');
+  }, [reactFlowInstance, setNodes]);
 
   // Submit score to leaderboard
   const submitScore = useCallback((score: number) => {
@@ -246,6 +285,8 @@ export default function App() {
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
+    // Auto-switch to config tab when a node is selected
+    setActiveRightTab('config');
   }, []);
 
   const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -260,6 +301,14 @@ export default function App() {
   const onEdgeDoubleClick = useCallback((event: React.MouseEvent, edge: Edge) => {
     // Delete edge on double click
     setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+  }, []);
+
+  const onSelectionChange = useCallback((params: { nodes: Node[]; edges: Edge[] }) => {
+    const selected = params.nodes && params.nodes.length > 0 ? params.nodes[0] : null;
+    setSelectedNode(selected);
+    if (selected) {
+      setActiveRightTab('config');
+    }
   }, []);
 
   const onUpdateNode = useCallback((nodeId: string, params: any) => {
@@ -693,7 +742,6 @@ export default function App() {
         }}>
           
           <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}>
-            <ReactFlowProvider>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -706,12 +754,11 @@ export default function App() {
                 onNodeClick={onNodeClick}
                 onNodeDoubleClick={onNodeDoubleClick}
                 onEdgeDoubleClick={onEdgeDoubleClick}
+                onSelectionChange={onSelectionChange}
                 fitView
                 style={{
                   background: 'transparent'
                 }}
-                nodeTypes={{}}
-                edgeTypes={{}}
                 minZoom={0.1}
                 maxZoom={2}
                 defaultViewport={{ x: 0, y: 0, zoom: 1 }}
@@ -742,7 +789,6 @@ export default function App() {
                   }}
                 />
               </ReactFlow>
-            </ReactFlowProvider>
           </div>
           
           {/* Canvas Overlay - Empty State */}
@@ -819,6 +865,7 @@ export default function App() {
           selectedNode={selectedNode}
           onUpdateNode={onUpdateNode}
           onDeleteNode={onDeleteNode}
+          onAddComponentClick={addComponentByTypeId}
           currentTraffic={currentTraffic}
           onTrafficChange={onTrafficChange}
           onChaosEventTrigger={onChaosEventTrigger}
