@@ -5,11 +5,13 @@ import { ComponentType, ComponentParams } from './componentsSchema';
 interface ComponentConfigPanelProps {
   selectedNode: Node | null;
   onUpdateNode: (nodeId: string, params: ComponentParams) => void;
+  onDeleteNode?: (nodeId: string) => void;
 }
 
 const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({ 
   selectedNode, 
-  onUpdateNode 
+  onUpdateNode,
+  onDeleteNode
 }) => {
   if (!selectedNode || !selectedNode.data.componentType) {
     return (
@@ -117,9 +119,29 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
       </h3>
       
       <div style={{ marginBottom: '15px' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px' }}>
-          {componentType.name}
-        </h4>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <h4 style={{ margin: 0, color: '#333', fontSize: '14px' }}>
+            {componentType.name}
+          </h4>
+          {onDeleteNode && (
+            <button
+              onClick={() => onDeleteNode(selectedNode.id)}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '10px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              title="Delete component (or press Delete key)"
+            >
+              🗑️ Delete
+            </button>
+          )}
+        </div>
         <p style={{ 
           margin: 0, 
           fontSize: '12px', 

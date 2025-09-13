@@ -1,6 +1,7 @@
 import { PlacedComponent, Connection, ComponentType, components, TrafficProfile } from './componentsSchema';
 import { Challenge } from './sampleChallenges';
 import { ChaosEvent } from './ChaosEvents';
+import { claudeFeedbackService, ClaudeFeedback } from './services/claudeFeedbackService';
 
 export interface SimulationResult {
   metrics: {
@@ -17,6 +18,8 @@ export interface SimulationResult {
   feedback: string[];
   violations: string[];
   recommendations: string[];
+  claudeFeedback?: ClaudeFeedback;
+  isClaudeAnalysisAvailable: boolean;
 }
 
 export interface SystemDesign {
@@ -25,7 +28,7 @@ export interface SystemDesign {
   activeChaosEvents?: ChaosEvent[];
 }
 
-export const simulate = (challenge: Challenge, design: SystemDesign): SimulationResult => {
+export const simulate = async (challenge: Challenge, design: SystemDesign): Promise<SimulationResult> => {
   const { components: placedComponents, connections, activeChaosEvents = [] } = design;
   const traffic = challenge.trafficProfile;
   
@@ -41,12 +44,31 @@ export const simulate = (challenge: Challenge, design: SystemDesign): Simulation
     activeChaosEvents
   );
 
+  // Get Claude feedback (async)
+  let claudeFeedback: ClaudeFeedback | undefined;
+  let isClaudeAnalysisAvailable = false;
+  
+  try {
+    claudeFeedback = await claudeFeedbackService.getFeedback(
+      challenge,
+      placedComponents,
+      connections,
+      { metrics, score, feedback, violations, recommendations, isClaudeAnalysisAvailable: false }
+    );
+    isClaudeAnalysisAvailable = true;
+  } catch (error) {
+    console.warn('Claude feedback unavailable:', error);
+    isClaudeAnalysisAvailable = false;
+  }
+
   return {
     metrics,
-    score,
+    score: claudeFeedback ? claudeFeedback.score : score,
     feedback,
     violations,
-    recommendations
+    recommendations,
+    claudeFeedback,
+    isClaudeAnalysisAvailable
   };
 };
 

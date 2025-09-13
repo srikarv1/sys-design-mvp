@@ -1,5 +1,6 @@
 import React from 'react';
 import { Challenge } from './sampleChallenges';
+import { theme } from './styles/theme';
 
 interface ChallengePanelProps {
   challenges: Challenge[];
@@ -35,85 +36,191 @@ const ChallengePanel: React.FC<ChallengePanelProps> = ({
   };
 
   return (
-    <div style={{ padding: '15px', height: '100%', overflowY: 'auto' }}>
-      <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '16px' }}>Challenges</h3>
-      
-      <div style={{ marginBottom: '15px' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px' }}>Current Challenge</h4>
+    <div style={{ 
+      padding: theme.spacing.lg, 
+      height: '100%', 
+      overflowY: 'auto',
+      backgroundColor: theme.colors.gray[50]
+    }}>
+      {/* Current Challenge */}
+      <div style={{ marginBottom: theme.spacing.lg }}>
         <div style={{ 
-          padding: '12px', 
-          backgroundColor: '#e3f2fd', 
-          borderRadius: '6px',
-          border: '2px solid #2196f3'
+          padding: theme.spacing.lg, 
+          backgroundColor: theme.colors.white, 
+          borderRadius: theme.borderRadius.lg,
+          border: `2px solid ${theme.colors.primary[200]}`,
+          boxShadow: theme.shadows.sm,
+          transition: theme.transitions.fast
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h5 style={{ margin: 0, color: '#333', fontSize: '13px' }}>{selectedChallenge.title}</h5>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
+            <h4 style={{ 
+              margin: 0, 
+              color: theme.colors.gray[900], 
+              fontSize: theme.typography.fontSize.base,
+              fontWeight: theme.typography.fontWeight.semibold
+            }}>
+              {selectedChallenge.title}
+            </h4>
             <span style={{ 
-              padding: '2px 6px', 
+              padding: `${theme.spacing.xs} ${theme.spacing.sm}`, 
               backgroundColor: getLevelColor(selectedChallenge.level),
-              color: 'white',
-              borderRadius: '3px',
-              fontSize: '10px',
-              fontWeight: 'bold'
+              color: theme.colors.white,
+              borderRadius: theme.borderRadius.md,
+              fontSize: theme.typography.fontSize.xs,
+              fontWeight: theme.typography.fontWeight.bold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}>
               {getLevelLabel(selectedChallenge.level)}
             </span>
           </div>
-          <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#666' }}>
+          
+          <p style={{ 
+            margin: `0 0 ${theme.spacing.md} 0`, 
+            fontSize: theme.typography.fontSize.sm, 
+            color: theme.colors.gray[600],
+            lineHeight: 1.5
+          }}>
             {selectedChallenge.description}
           </p>
-          <div style={{ fontSize: '11px', color: '#666' }}>
-            <div><strong>Traffic:</strong> {selectedChallenge.trafficProfile.rps.toLocaleString()} RPS</div>
-            <div><strong>Budget:</strong> ${selectedChallenge.budget}/month</div>
-            <div><strong>SLA:</strong> {selectedChallenge.sla.maxLatency}ms latency, {(selectedChallenge.sla.minAvailability * 100).toFixed(2)}% uptime</div>
+          
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gap: theme.spacing.sm,
+            fontSize: theme.typography.fontSize.xs,
+            color: theme.colors.gray[600]
+          }}>
+            <div style={{
+              padding: theme.spacing.sm,
+              backgroundColor: theme.colors.gray[50],
+              borderRadius: theme.borderRadius.sm,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.gray[900] }}>
+                {selectedChallenge.trafficProfile.rps.toLocaleString()}
+              </div>
+              <div>RPS</div>
+            </div>
+            <div style={{
+              padding: theme.spacing.sm,
+              backgroundColor: theme.colors.gray[50],
+              borderRadius: theme.borderRadius.sm,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.gray[900] }}>
+                ${selectedChallenge.budget}
+              </div>
+              <div>/month</div>
+            </div>
+            <div style={{
+              padding: theme.spacing.sm,
+              backgroundColor: theme.colors.gray[50],
+              borderRadius: theme.borderRadius.sm,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.gray[900] }}>
+                {selectedChallenge.sla.maxLatency}ms
+              </div>
+              <div>Latency</div>
+            </div>
+            <div style={{
+              padding: theme.spacing.sm,
+              backgroundColor: theme.colors.gray[50],
+              borderRadius: theme.borderRadius.sm,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.gray[900] }}>
+                {(selectedChallenge.sla.minAvailability * 100).toFixed(1)}%
+              </div>
+              <div>Uptime</div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Available Challenges */}
       <div>
-        <h4 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '14px' }}>Available Challenges</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <h4 style={{ 
+          margin: `0 0 ${theme.spacing.md} 0`, 
+          color: theme.colors.gray[900], 
+          fontSize: theme.typography.fontSize.sm,
+          fontWeight: theme.typography.fontWeight.semibold
+        }}>
+          Available Challenges
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.sm }}>
           {challenges.map((challenge) => (
             <div
               key={challenge.id}
               onClick={() => onChallengeSelect(challenge)}
               style={{
-                padding: '8px',
-                backgroundColor: challenge.id === selectedChallenge.id ? '#e3f2fd' : '#f8f9fa',
-                border: challenge.id === selectedChallenge.id ? '2px solid #2196f3' : '1px solid #ddd',
-                borderRadius: '6px',
+                padding: theme.spacing.md,
+                backgroundColor: challenge.id === selectedChallenge.id ? theme.colors.primary[50] : theme.colors.white,
+                border: challenge.id === selectedChallenge.id 
+                  ? `2px solid ${theme.colors.primary[300]}` 
+                  : `1px solid ${theme.colors.gray[200]}`,
+                borderRadius: theme.borderRadius.lg,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontSize: '12px'
+                transition: theme.transitions.fast,
+                fontSize: theme.typography.fontSize.sm,
+                boxShadow: challenge.id === selectedChallenge.id ? theme.shadows.md : theme.shadows.sm
               }}
               onMouseEnter={(e) => {
                 if (challenge.id !== selectedChallenge.id) {
-                  e.currentTarget.style.backgroundColor = '#e9ecef';
+                  e.currentTarget.style.backgroundColor = theme.colors.gray[50];
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = theme.shadows.md;
                 }
               }}
               onMouseLeave={(e) => {
                 if (challenge.id !== selectedChallenge.id) {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
+                  e.currentTarget.style.backgroundColor = theme.colors.white;
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = theme.shadows.sm;
                 }
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                <div style={{ fontWeight: 'bold', color: '#333', fontSize: '11px' }}>{challenge.title}</div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: theme.spacing.xs 
+              }}>
+                <div style={{ 
+                  fontWeight: theme.typography.fontWeight.semibold, 
+                  color: theme.colors.gray[900], 
+                  fontSize: theme.typography.fontSize.sm
+                }}>
+                  {challenge.title}
+                </div>
                 <span style={{ 
-                  padding: '1px 4px', 
+                  padding: `${theme.spacing.xs} ${theme.spacing.sm}`, 
                   backgroundColor: getLevelColor(challenge.level),
-                  color: 'white',
-                  borderRadius: '2px',
-                  fontSize: '9px',
-                  fontWeight: 'bold'
+                  color: theme.colors.white,
+                  borderRadius: theme.borderRadius.sm,
+                  fontSize: theme.typography.fontSize.xs,
+                  fontWeight: theme.typography.fontWeight.bold
                 }}>
                   L{challenge.level}
                 </span>
               </div>
-              <div style={{ fontSize: '10px', color: '#666', marginBottom: '3px' }}>
-                {challenge.trafficProfile.rps.toLocaleString()} RPS • ${challenge.budget}/mo
+              <div style={{ 
+                fontSize: theme.typography.fontSize.xs, 
+                color: theme.colors.gray[600], 
+                marginBottom: theme.spacing.xs,
+                display: 'flex',
+                gap: theme.spacing.sm
+              }}>
+                <span>{challenge.trafficProfile.rps.toLocaleString()} RPS</span>
+                <span>•</span>
+                <span>${challenge.budget}/mo</span>
               </div>
-              <div style={{ fontSize: '9px', color: '#888' }}>
+              <div style={{ 
+                fontSize: theme.typography.fontSize.xs, 
+                color: theme.colors.gray[500],
+                lineHeight: 1.4
+              }}>
                 {challenge.mustHaves.slice(0, 2).join(', ')}
                 {challenge.mustHaves.length > 2 && '...'}
               </div>
@@ -123,11 +230,33 @@ const ChallengePanel: React.FC<ChallengePanelProps> = ({
       </div>
 
       {/* Hints Section */}
-      <div style={{ marginTop: '15px' }}>
-        <h5 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '12px' }}>💡 Hints</h5>
-        <ul style={{ margin: 0, paddingLeft: '15px', fontSize: '10px', color: '#666' }}>
+      <div style={{ 
+        marginTop: theme.spacing.lg,
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.warning[50],
+        borderRadius: theme.borderRadius.lg,
+        border: `1px solid ${theme.colors.warning[200]}`
+      }}>
+        <h5 style={{ 
+          margin: `0 0 ${theme.spacing.sm} 0`, 
+          color: theme.colors.gray[900], 
+          fontSize: theme.typography.fontSize.sm,
+          fontWeight: theme.typography.fontWeight.semibold,
+          display: 'flex',
+          alignItems: 'center',
+          gap: theme.spacing.sm
+        }}>
+          💡 Hints
+        </h5>
+        <ul style={{ 
+          margin: 0, 
+          paddingLeft: theme.spacing.lg, 
+          fontSize: theme.typography.fontSize.xs, 
+          color: theme.colors.gray[700],
+          lineHeight: 1.5
+        }}>
           {selectedChallenge.hints.map((hint, index) => (
-            <li key={index} style={{ marginBottom: '3px' }}>
+            <li key={index} style={{ marginBottom: theme.spacing.xs }}>
               {hint}
             </li>
           ))}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { SimulationResult } from './simulate';
 import { Challenge } from './sampleChallenges';
+import ClaudeFeedbackPanel from './ClaudeFeedbackPanel';
 
 interface MetricsPanelProps {
   simulationResult: SimulationResult | null;
@@ -51,6 +52,13 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({
         </div>
       ) : simulationResult ? (
         <div>
+          {/* Claude Feedback Panel */}
+          <ClaudeFeedbackPanel 
+            feedback={simulationResult.claudeFeedback}
+            isAvailable={simulationResult.isClaudeAnalysisAvailable}
+            isLoading={isSimulating}
+          />
+
           {/* Overall Score */}
           <div style={{ 
             marginBottom: '20px',
