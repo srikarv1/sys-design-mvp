@@ -1,0 +1,534 @@
+{
+  "challenge": {
+    "id": "image-sharing-platform",
+    "title": "Image Sharing Platform",
+    "description": "Design a scalable image sharing platform similar to Instagram that can handle 50M users with 1M daily active users, processing 10TB+ of images daily.",
+    "difficulty": "expert",
+    "estimatedTime": "45-60 minutes",
+    "requirements": {
+      "mustHave": [
+        "API Gateway",
+        "Load Balancer", 
+        "Web Services",
+        "Image Processing Service",
+        "Object Storage",
+        "CDN",
+        "Database (Primary)",
+        "Cache Layer",
+        "Message Queue"
+      ],
+      "shouldHave": [
+        "Search Engine",
+        "Social Graph Database",
+        "Notification Service",
+        "Analytics Service"
+      ],
+      "antiPatterns": [
+        "Single point of failure",
+        "No caching strategy",
+        "Synchronous image processing",
+        "No CDN for global users"
+      ]
+    },
+    "constraints": {
+      "maxCost": 15000,
+      "maxLatency": 200,
+      "minAvailability": 99.9,
+      "maxThroughput": 10000
+    },
+    "trafficProfile": {
+      "baseRPS": 5000,
+      "readWriteRatio": 0.8,
+      "payloadSize": 2048,
+      "peakMultiplier": 3.0,
+      "geographicDistribution": {
+        "US": 0.4,
+        "Europe": 0.3,
+        "Asia": 0.2,
+        "Others": 0.1
+      }
+    },
+    "scenarios": [
+      {
+        "name": "Image Upload",
+        "description": "User uploads a 5MB image with metadata",
+        "rps": 1000,
+        "latency": 5000,
+        "dataTransfer": 5242880
+      },
+      {
+        "name": "Feed Generation", 
+        "description": "User requests personalized feed of 20 images",
+        "rps": 3000,
+        "latency": 200,
+        "dataTransfer": 1024
+      },
+      {
+        "name": "Image Viewing",
+        "description": "User views full-size image (2MB)",
+        "rps": 8000,
+        "latency": 2000,
+        "dataTransfer": 2097152
+      },
+      {
+        "name": "Social Actions",
+        "description": "User likes, comments, or follows",
+        "rps": 2000,
+        "latency": 100,
+        "dataTransfer": 512
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "api-gateway",
+      "name": "API Gateway",
+      "category": "gateway",
+      "description": "Single entry point for all client requests with rate limiting and authentication",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "rateLimit": 1000,
+        "authEnabled": true
+      },
+      "costPerHour": 0.5,
+      "maxThroughput": 10000,
+      "latency": 10,
+      "availability": 99.95,
+      "allowedConnections": ["load-balancer", "web-services", "image-services", "social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 10,
+        "scaleUpThreshold": 70,
+        "scaleDownThreshold": 30
+      }
+    },
+    {
+      "id": "load-balancer",
+      "name": "Load Balancer",
+      "category": "infrastructure", 
+      "description": "Distributes traffic across multiple service instances with health checks",
+      "defaultParams": {
+        "algorithm": "round-robin",
+        "healthCheck": true,
+        "sslTermination": true,
+        "region": "us-east-1"
+      },
+      "costPerHour": 0.3,
+      "maxThroughput": 50000,
+      "latency": 5,
+      "availability": 99.99,
+      "allowedConnections": ["web-services", "image-services", "social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 5,
+        "scaleUpThreshold": 80,
+        "scaleDownThreshold": 20
+      }
+    },
+    {
+      "id": "web-services",
+      "name": "Web Services",
+      "category": "application",
+      "description": "User management, authentication, and profile services",
+      "defaultParams": {
+        "instances": 5,
+        "region": "us-east-1",
+        "memory": "2GB",
+        "cpu": "1 vCPU"
+      },
+      "costPerHour": 2.0,
+      "maxThroughput": 2000,
+      "latency": 50,
+      "availability": 99.9,
+      "allowedConnections": ["database-primary", "cache-layer", "message-queue"],
+      "scaling": {
+        "minInstances": 3,
+        "maxInstances": 20,
+        "scaleUpThreshold": 75,
+        "scaleDownThreshold": 25
+      }
+    },
+    {
+      "id": "image-services",
+      "name": "Image Processing Service",
+      "category": "application",
+      "description": "Handles image upload, resizing, compression, and metadata extraction",
+      "defaultParams": {
+        "instances": 8,
+        "region": "us-east-1", 
+        "memory": "4GB",
+        "cpu": "2 vCPU",
+        "gpuEnabled": false
+      },
+      "costPerHour": 4.0,
+      "maxThroughput": 500,
+      "latency": 2000,
+      "availability": 99.9,
+      "allowedConnections": ["object-storage", "message-queue", "cache-layer"],
+      "scaling": {
+        "minInstances": 5,
+        "maxInstances": 50,
+        "scaleUpThreshold": 80,
+        "scaleDownThreshold": 30
+      }
+    },
+    {
+      "id": "social-services",
+      "name": "Social Services",
+      "category": "application",
+      "description": "Handles social features like feeds, follows, likes, and comments",
+      "defaultParams": {
+        "instances": 6,
+        "region": "us-east-1",
+        "memory": "3GB", 
+        "cpu": "1.5 vCPU"
+      },
+      "costPerHour": 3.0,
+      "maxThroughput": 3000,
+      "latency": 100,
+      "availability": 99.9,
+      "allowedConnections": ["database-primary", "social-database", "cache-layer", "message-queue"],
+      "scaling": {
+        "minInstances": 4,
+        "maxInstances": 25,
+        "scaleUpThreshold": 70,
+        "scaleDownThreshold": 30
+      }
+    },
+    {
+      "id": "database-primary",
+      "name": "Primary Database",
+      "category": "database",
+      "description": "PostgreSQL database for user data, posts metadata, and comments",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "storage": "500GB",
+        "readReplicas": 2,
+        "backupEnabled": true
+      },
+      "costPerHour": 8.0,
+      "maxThroughput": 5000,
+      "latency": 20,
+      "availability": 99.95,
+      "allowedConnections": ["web-services", "social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 10,
+        "scaleUpThreshold": 85,
+        "scaleDownThreshold": 40
+      }
+    },
+    {
+      "id": "social-database",
+      "name": "Social Graph Database",
+      "category": "database",
+      "description": "MongoDB for social relationships, activity feeds, and social graph data",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "storage": "200GB",
+        "sharding": true,
+        "replicaSet": true
+      },
+      "costPerHour": 5.0,
+      "maxThroughput": 8000,
+      "latency": 15,
+      "availability": 99.9,
+      "allowedConnections": ["social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 8,
+        "scaleUpThreshold": 80,
+        "scaleDownThreshold": 35
+      }
+    },
+    {
+      "id": "cache-layer",
+      "name": "Cache Layer (Redis)",
+      "category": "cache",
+      "description": "Redis cluster for session storage, feed caching, and popular content",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "memory": "8GB",
+        "cluster": true,
+        "persistence": true
+      },
+      "costPerHour": 3.0,
+      "maxThroughput": 50000,
+      "latency": 1,
+      "availability": 99.9,
+      "allowedConnections": ["web-services", "social-services", "image-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 6,
+        "scaleUpThreshold": 90,
+        "scaleDownThreshold": 50
+      }
+    },
+    {
+      "id": "object-storage",
+      "name": "Object Storage",
+      "category": "storage",
+      "description": "S3-compatible storage for image files with lifecycle management",
+      "defaultParams": {
+        "region": "us-east-1",
+        "storage": "10TB",
+        "replication": "cross-region",
+        "lifecyclePolicy": true,
+        "encryption": true
+      },
+      "costPerHour": 2.5,
+      "maxThroughput": 1000,
+      "latency": 100,
+      "availability": 99.999,
+      "allowedConnections": ["image-services", "cdn"],
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 1,
+        "scaleUpThreshold": 95,
+        "scaleDownThreshold": 0
+      }
+    },
+    {
+      "id": "cdn",
+      "name": "CDN Network",
+      "category": "infrastructure",
+      "description": "Global content delivery network for image caching and distribution",
+      "defaultParams": {
+        "regions": ["us-east-1", "eu-west-1", "ap-southeast-1"],
+        "cacheTTL": 2592000,
+        "compression": true,
+        "http2": true
+      },
+      "costPerHour": 1.5,
+      "maxThroughput": 100000,
+      "latency": 50,
+      "availability": 99.99,
+      "allowedConnections": ["object-storage"],
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 1,
+        "scaleUpThreshold": 95,
+        "scaleDownThreshold": 0
+      }
+    },
+    {
+      "id": "message-queue",
+      "name": "Message Queue",
+      "category": "messaging",
+      "description": "Apache Kafka for async processing of image jobs and notifications",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "partitions": 12,
+        "replication": 3,
+        "retention": "7d"
+      },
+      "costPerHour": 2.0,
+      "maxThroughput": 10000,
+      "latency": 5,
+      "availability": 99.9,
+      "allowedConnections": ["web-services", "image-services", "social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 8,
+        "scaleUpThreshold": 80,
+        "scaleDownThreshold": 30
+      }
+    },
+    {
+      "id": "search-engine",
+      "name": "Search Engine",
+      "category": "search",
+      "description": "Elasticsearch for full-text search of users, images, and content",
+      "defaultParams": {
+        "instances": 3,
+        "region": "us-east-1",
+        "storage": "100GB",
+        "shards": 5,
+        "replicas": 1
+      },
+      "costPerHour": 4.0,
+      "maxThroughput": 2000,
+      "latency": 100,
+      "availability": 99.9,
+      "allowedConnections": ["web-services", "social-services"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 6,
+        "scaleUpThreshold": 75,
+        "scaleDownThreshold": 40
+      }
+    },
+    {
+      "id": "notification-service",
+      "name": "Notification Service",
+      "category": "application",
+      "description": "Handles push notifications, email alerts, and real-time updates",
+      "defaultParams": {
+        "instances": 4,
+        "region": "us-east-1",
+        "memory": "2GB",
+        "cpu": "1 vCPU"
+      },
+      "costPerHour": 1.5,
+      "maxThroughput": 5000,
+      "latency": 200,
+      "availability": 99.9,
+      "allowedConnections": ["message-queue", "cache-layer"],
+      "scaling": {
+        "minInstances": 2,
+        "maxInstances": 15,
+        "scaleUpThreshold": 70,
+        "scaleDownThreshold": 30
+      }
+    },
+    {
+      "id": "analytics-service",
+      "name": "Analytics Service",
+      "category": "application",
+      "description": "Collects and processes user behavior data and system metrics",
+      "defaultParams": {
+        "instances": 2,
+        "region": "us-east-1",
+        "memory": "4GB",
+        "cpu": "2 vCPU"
+      },
+      "costPerHour": 2.5,
+      "maxThroughput": 1000,
+      "latency": 500,
+      "availability": 99.5,
+      "allowedConnections": ["message-queue", "database-primary"],
+      "scaling": {
+        "minInstances": 1,
+        "maxInstances": 8,
+        "scaleUpThreshold": 80,
+        "scaleDownThreshold": 40
+      }
+    }
+  ],
+  "sampleArchitecture": {
+    "components": [
+      {
+        "id": "api-gateway-1",
+        "typeId": "api-gateway",
+        "position": { "x": 100, "y": 100 },
+        "params": { "instances": 3, "rateLimit": 1000 }
+      },
+      {
+        "id": "load-balancer-1", 
+        "typeId": "load-balancer",
+        "position": { "x": 100, "y": 200 },
+        "params": { "algorithm": "round-robin" }
+      },
+      {
+        "id": "web-services-1",
+        "typeId": "web-services", 
+        "position": { "x": 50, "y": 300 },
+        "params": { "instances": 5 }
+      },
+      {
+        "id": "image-services-1",
+        "typeId": "image-services",
+        "position": { "x": 150, "y": 300 },
+        "params": { "instances": 8 }
+      },
+      {
+        "id": "social-services-1",
+        "typeId": "social-services",
+        "position": { "x": 250, "y": 300 },
+        "params": { "instances": 6 }
+      },
+      {
+        "id": "database-primary-1",
+        "typeId": "database-primary",
+        "position": { "x": 50, "y": 450 },
+        "params": { "instances": 3, "readReplicas": 2 }
+      },
+      {
+        "id": "social-database-1",
+        "typeId": "social-database",
+        "position": { "x": 250, "y": 450 },
+        "params": { "instances": 3 }
+      },
+      {
+        "id": "cache-layer-1",
+        "typeId": "cache-layer",
+        "position": { "x": 150, "y": 450 },
+        "params": { "instances": 3, "memory": "8GB" }
+      },
+      {
+        "id": "object-storage-1",
+        "typeId": "object-storage",
+        "position": { "x": 150, "y": 600 },
+        "params": { "storage": "10TB" }
+      },
+      {
+        "id": "cdn-1",
+        "typeId": "cdn",
+        "position": { "x": 150, "y": 750 },
+        "params": { "cacheTTL": 2592000 }
+      },
+      {
+        "id": "message-queue-1",
+        "typeId": "message-queue",
+        "position": { "x": 350, "y": 450 },
+        "params": { "instances": 3 }
+      }
+    ],
+    "connections": [
+      { "fromId": "api-gateway-1", "toId": "load-balancer-1" },
+      { "fromId": "load-balancer-1", "toId": "web-services-1" },
+      { "fromId": "load-balancer-1", "toId": "image-services-1" },
+      { "fromId": "load-balancer-1", "toId": "social-services-1" },
+      { "fromId": "web-services-1", "toId": "database-primary-1" },
+      { "fromId": "web-services-1", "toId": "cache-layer-1" },
+      { "fromId": "image-services-1", "toId": "object-storage-1" },
+      { "fromId": "image-services-1", "toId": "message-queue-1" },
+      { "fromId": "social-services-1", "toId": "social-database-1" },
+      { "fromId": "social-services-1", "toId": "cache-layer-1" },
+      { "fromId": "object-storage-1", "toId": "cdn-1" }
+    ]
+  },
+  "evaluationCriteria": {
+    "performance": {
+      "weight": 0.3,
+      "metrics": [
+        { "name": "API Response Time", "target": 200, "weight": 0.4 },
+        { "name": "Image Load Time", "target": 2000, "weight": 0.3 },
+        { "name": "Upload Time", "target": 5000, "weight": 0.3 }
+      ]
+    },
+    "scalability": {
+      "weight": 0.25,
+      "metrics": [
+        { "name": "Throughput", "target": 10000, "weight": 0.5 },
+        { "name": "Auto-scaling", "required": true, "weight": 0.5 }
+      ]
+    },
+    "reliability": {
+      "weight": 0.2,
+      "metrics": [
+        { "name": "Availability", "target": 99.9, "weight": 0.6 },
+        { "name": "Fault Tolerance", "required": true, "weight": 0.4 }
+      ]
+    },
+    "cost": {
+      "weight": 0.15,
+      "metrics": [
+        { "name": "Monthly Cost", "target": 15000, "weight": 1.0 }
+      ]
+    },
+    "architecture": {
+      "weight": 0.1,
+      "metrics": [
+        { "name": "Component Selection", "required": true, "weight": 0.4 },
+        { "name": "Connection Logic", "required": true, "weight": 0.3 },
+        { "name": "Best Practices", "required": true, "weight": 0.3 }
+      ]
+    }
+  }
+}

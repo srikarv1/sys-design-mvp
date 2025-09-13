@@ -21,7 +21,7 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#666',
+        color: '#94a3b8',
         fontSize: '12px'
       }}>
         Select a component to configure
@@ -114,13 +114,13 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
 
   return (
     <div style={{ padding: '15px', height: '100%', overflowY: 'auto' }}>
-      <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '16px' }}>
+      <h3 style={{ marginBottom: '15px', color: '#3b82f6', fontSize: '16px', fontWeight: '600' }}>
         ⚙️ Configure Component
       </h3>
       
       <div style={{ marginBottom: '15px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h4 style={{ margin: 0, color: '#333', fontSize: '14px' }}>
+          <h4 style={{ margin: 0, color: '#e2e8f0', fontSize: '14px', fontWeight: '600' }}>
             {componentType.name}
           </h4>
           {onDeleteNode && (
@@ -145,7 +145,7 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
         <p style={{ 
           margin: 0, 
           fontSize: '12px', 
-          color: '#666',
+          color: '#94a3b8',
           lineHeight: '1.4'
         }}>
           {componentType.description}
@@ -153,7 +153,7 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
       </div>
 
       <div>
-        <h5 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '12px' }}>
+        <h5 style={{ margin: '0 0 10px 0', color: '#e2e8f0', fontSize: '12px', fontWeight: '600' }}>
           Configuration
         </h5>
         
@@ -163,7 +163,7 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
               display: 'block', 
               marginBottom: '4px', 
               fontSize: '11px', 
-              color: '#666',
+              color: '#cbd5e1',
               textTransform: 'capitalize',
               fontWeight: 'bold'
             }}>
@@ -178,14 +178,14 @@ const ComponentConfigPanel: React.FC<ComponentConfigPanelProps> = ({
       <div style={{ 
         marginTop: '20px',
         padding: '10px',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderRadius: '6px',
-        border: '1px solid #dee2e6'
+        border: '1px solid #334155'
       }}>
-        <h6 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '11px' }}>
+        <h6 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '11px', fontWeight: '600' }}>
           Performance Preview
         </h6>
-        <div style={{ fontSize: '10px', color: '#666' }}>
+        <div style={{ fontSize: '10px', color: '#94a3b8' }}>
           <div>Base Latency: ~{componentType.latencyFn(currentParams, { rps: 1000, readRatio: 0.8, payloadSize: 1024, peakMultiplier: 2 }).toFixed(1)}ms</div>
           <div>Base Cost: ~${componentType.costFn(currentParams, { rps: 1000, readRatio: 0.8, payloadSize: 1024, peakMultiplier: 2 }).toFixed(0)}/mo</div>
           <div>Availability: ~{(componentType.availabilityFn(currentParams) * 100).toFixed(2)}%</div>

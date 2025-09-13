@@ -155,7 +155,6 @@ export default function App() {
 
     setNodes((nds) => nds.concat(newNode));
     setSelectedNode(newNode);
-    setActiveRightTab('config');
   }, [reactFlowInstance, setNodes]);
 
   const getCategoryColor = (category: string) => {
