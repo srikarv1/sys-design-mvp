@@ -1,20 +1,20 @@
 export const theme = {
   colors: {
-    // Primary brand colors
+    // Primary brand colors - Modern professional blue
     primary: {
-      50: '#f0f9ff',
-      100: '#e0f2fe',
-      200: '#bae6fd',
-      300: '#7dd3fc',
-      400: '#38bdf8',
-      500: '#0ea5e9',
-      600: '#0284c7',
-      700: '#0369a1',
-      800: '#075985',
-      900: '#0c4a6e',
+      50: '#eff6ff',
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#93c5fd',
+      400: '#60a5fa',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      800: '#1e40af',
+      900: '#1e3a8a',
     },
     
-    // Secondary colors
+    // Secondary colors - Professional slate
     secondary: {
       50: '#f8fafc',
       100: '#f1f5f9',
@@ -70,18 +70,18 @@ export const theme = {
       900: '#7f1d1d',
     },
     
-    // Component category colors - Professional palette
+    // Component category colors - Modern professional palette
     components: {
-      edge: '#2563eb',       // Professional Blue
-      app: '#059669',        // Professional Green
-      storage: '#7c3aed',    // Professional Purple
-      integration: '#d97706', // Professional Orange
-      search: '#dc2626',     // Professional Red
-      cdn: '#0891b2',        // Professional Cyan
-      security: '#991b1b',   // Professional Dark Red
-      monitoring: '#047857', // Professional Dark Green
-      ai: '#6b21a8',         // Professional Dark Purple
-      gaming: '#c2410c',     // Professional Dark Orange
+      edge: '#3b82f6',       // Professional Blue
+      app: '#10b981',        // Professional Green
+      storage: '#8b5cf6',    // Professional Purple
+      integration: '#f59e0b', // Professional Amber
+      search: '#ef4444',     // Professional Red
+      cdn: '#06b6d4',        // Professional Cyan
+      security: '#dc2626',   // Professional Red
+      monitoring: '#059669', // Professional Green
+      ai: '#7c3aed',         // Professional Violet
+      gaming: '#ea580c',     // Professional Orange
     },
     
     // Neutral colors

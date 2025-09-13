@@ -19,12 +19,12 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
 
   return (
     <div style={{ padding: '15px', height: '100%', overflowY: 'auto' }}>
-      <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '16px' }}>
-        🎛️ What-If Analysis
+      <h3 style={{ marginBottom: '15px', color: '#e2e8f0', fontSize: '16px' }}>
+        What-If Analysis
       </h3>
       <p style={{ 
         fontSize: '12px', 
-        color: '#666', 
+        color: '#cbd5e1', 
         marginBottom: '15px',
         lineHeight: '1.4'
       }}>
@@ -38,7 +38,7 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'block', 
             marginBottom: '5px', 
             fontSize: '12px', 
-            color: '#333',
+            color: '#e2e8f0',
             fontWeight: 'bold'
           }}>
             Requests Per Second (RPS)
@@ -56,11 +56,11 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'flex', 
             justifyContent: 'space-between', 
             fontSize: '10px', 
-            color: '#666',
+            color: '#94a3b8',
             marginTop: '2px'
           }}>
             <span>1K</span>
-            <span style={{ fontWeight: 'bold', color: '#333' }}>
+            <span style={{ fontWeight: 'bold', color: '#e2e8f0' }}>
               {trafficProfile.rps.toLocaleString()} RPS
             </span>
             <span>100K</span>
@@ -73,7 +73,7 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'block', 
             marginBottom: '5px', 
             fontSize: '12px', 
-            color: '#333',
+            color: '#e2e8f0',
             fontWeight: 'bold'
           }}>
             Read/Write Ratio
@@ -91,11 +91,11 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'flex', 
             justifyContent: 'space-between', 
             fontSize: '10px', 
-            color: '#666',
+            color: '#94a3b8',
             marginTop: '2px'
           }}>
             <span>10% Read</span>
-            <span style={{ fontWeight: 'bold', color: '#333' }}>
+            <span style={{ fontWeight: 'bold', color: '#e2e8f0' }}>
               {(trafficProfile.readRatio * 100).toFixed(0)}% Read
             </span>
             <span>90% Read</span>
@@ -108,7 +108,7 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'block', 
             marginBottom: '5px', 
             fontSize: '12px', 
-            color: '#333',
+            color: '#e2e8f0',
             fontWeight: 'bold'
           }}>
             Payload Size
@@ -126,11 +126,11 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'flex', 
             justifyContent: 'space-between', 
             fontSize: '10px', 
-            color: '#666',
+            color: '#94a3b8',
             marginTop: '2px'
           }}>
             <span>100B</span>
-            <span style={{ fontWeight: 'bold', color: '#333' }}>
+            <span style={{ fontWeight: 'bold', color: '#e2e8f0' }}>
               {formatBytes(trafficProfile.payloadSize)}
             </span>
             <span>10MB</span>
@@ -143,7 +143,7 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'block', 
             marginBottom: '5px', 
             fontSize: '12px', 
-            color: '#333',
+            color: '#e2e8f0',
             fontWeight: 'bold'
           }}>
             Peak Traffic Multiplier
@@ -161,11 +161,11 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
             display: 'flex', 
             justifyContent: 'space-between', 
             fontSize: '10px', 
-            color: '#666',
+            color: '#94a3b8',
             marginTop: '2px'
           }}>
             <span>1x</span>
-            <span style={{ fontWeight: 'bold', color: '#333' }}>
+            <span style={{ fontWeight: 'bold', color: '#e2e8f0' }}>
               {trafficProfile.peakMultiplier}x Peak
             </span>
             <span>10x</span>
@@ -177,14 +177,14 @@ const TrafficSliders: React.FC<TrafficSlidersProps> = ({
       <div style={{ 
         marginTop: '20px',
         padding: '10px',
-        backgroundColor: '#e3f2fd',
+        backgroundColor: '#0f172a',
         borderRadius: '6px',
-        border: '1px solid #2196f3'
+        border: '1px solid #334155'
       }}>
-        <h6 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '11px' }}>
-          📊 Traffic Summary
+        <h6 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '11px' }}>
+          Traffic Summary
         </h6>
-        <div style={{ fontSize: '10px', color: '#666' }}>
+        <div style={{ fontSize: '10px', color: '#cbd5e1' }}>
           <div>Base Load: {trafficProfile.rps.toLocaleString()} RPS</div>
           <div>Peak Load: {(trafficProfile.rps * trafficProfile.peakMultiplier).toLocaleString()} RPS</div>
           <div>Reads: {(trafficProfile.rps * trafficProfile.readRatio).toLocaleString()} RPS</div>

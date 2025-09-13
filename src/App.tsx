@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
@@ -47,6 +47,34 @@ export default function App() {
   const [activeRightTab, setActiveRightTab] = useState<'components' | 'config' | 'traffic' | 'chaos' | 'metrics'>('components');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(360);
+  const [rightPanelWidth, setRightPanelWidth] = useState<number>(480);
+  const isResizingRef = useRef<{ side: 'left' | 'right' | null }>({ side: null });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingRef.current.side) return;
+      if (isResizingRef.current.side === 'left') {
+        const newWidth = Math.max(260, Math.min(560, e.clientX - 24));
+        setLeftPanelWidth(newWidth);
+      } else if (isResizingRef.current.side === 'right') {
+        const windowWidth = window.innerWidth;
+        const newWidth = Math.max(360, Math.min(700, windowWidth - e.clientX - 24));
+        setRightPanelWidth(newWidth);
+      }
+    };
+    const handleMouseUp = () => {
+      isResizingRef.current.side = null;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const onConnect = useCallback((params: Connection) => {
     // Validate connection
@@ -120,7 +148,9 @@ export default function App() {
         fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.semibold,
         minWidth: '120px',
-        textAlign: 'center'
+        textAlign: 'center',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        transition: 'none'
       }
     };
 
@@ -250,6 +280,33 @@ export default function App() {
     }
   }, [selectedNode]);
 
+  // Handle delete key functionality
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter(node => node.selected);
+        const selectedEdges = edges.filter(edge => edge.selected);
+        
+        if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+          event.preventDefault();
+          
+          // Remove selected nodes
+          if (selectedNodes.length > 0) {
+            setNodes((nds) => nds.filter(node => !node.selected));
+          }
+          
+          // Remove selected edges
+          if (selectedEdges.length > 0) {
+            setEdges((eds) => eds.filter(edge => !edge.selected));
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, edges, setNodes, setEdges]);
+
   const onTrafficChange = useCallback((traffic: TrafficProfile) => {
     setCurrentTraffic(traffic);
     // Auto-run simulation when traffic changes
@@ -356,131 +413,145 @@ export default function App() {
       display: 'flex', 
       flexDirection: 'column',
       fontFamily: theme.typography.fontFamily.sans.join(', '),
-      backgroundColor: theme.colors.gray[50]
+      backgroundColor: theme.colors.secondary[900],
+      color: theme.colors.white
     }}>
-      {/* Header */}
+      {/* Modern Header */}
       <div style={{ 
-        padding: `${theme.spacing.md} ${theme.spacing.xl}`, 
-        background: `linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.primary[700]} 100%)`,
+        padding: `${theme.spacing.lg} ${theme.spacing.xl}`, 
+        backgroundColor: theme.colors.secondary[900],
         color: theme.colors.white,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: theme.shadows.md,
-        borderBottom: `1px solid ${theme.colors.primary[200]}`
+        borderBottom: `1px solid ${theme.colors.secondary[700]}`
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.lg }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            backgroundColor: theme.colors.white,
-            borderRadius: theme.borderRadius.lg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '20px'
-          }}>
-            🏗️
-          </div>
+            width: '28px',
+            height: '28px',
+            backgroundColor: theme.colors.primary[600],
+            borderRadius: theme.borderRadius.full
+          }} />
           <div>
             <h1 style={{ 
               margin: 0, 
-              fontSize: theme.typography.fontSize['2xl'],
+              fontSize: theme.typography.fontSize['3xl'],
               fontWeight: theme.typography.fontWeight.bold,
-              lineHeight: 1.2
+              lineHeight: 1.2,
+              color: theme.colors.white
             }}>
-              System Design Simulator
+              System Design Studio
             </h1>
             <p style={{ 
               margin: 0, 
-              fontSize: theme.typography.fontSize.sm,
-              opacity: 0.9,
+              fontSize: theme.typography.fontSize.base,
+              color: theme.colors.secondary[400],
               fontWeight: theme.typography.fontWeight.normal
             }}>
-              {gameMode === 'multiplayer' ? `🏆 Competing as ${playerName}` : '🎯 Practice mode - Build, test, and master system architecture'}
+              {gameMode === 'multiplayer' ? `Competing as ${playerName}` : 'Professional System Architecture Training'}
             </p>
           </div>
         </div>
         
         <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
+          {/* Progress Bar */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: theme.spacing.xs,
+            marginRight: theme.spacing.lg
+          }}>
+            <div style={{
+              fontSize: theme.typography.fontSize.xs,
+              color: theme.colors.secondary[400],
+              fontWeight: theme.typography.fontWeight.medium
+            }}>
+              Progress
+            </div>
+            <div style={{
+              width: '120px',
+              height: '6px',
+              backgroundColor: theme.colors.secondary[700],
+              borderRadius: theme.borderRadius.full,
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${Math.min(100, (nodes.length / 10) * 100)}%`,
+                height: '100%',
+                backgroundColor: theme.colors.primary[600],
+                borderRadius: theme.borderRadius.full,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+            <div style={{
+              fontSize: theme.typography.fontSize.xs,
+              color: theme.colors.secondary[400]
+            }}>
+              {nodes.length}/10 components
+            </div>
+          </div>
+
           <button
             onClick={() => setShowClaudeUsage(true)}
             style={{
-              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-              backgroundColor: theme.colors.white + '20',
-              color: theme.colors.white,
-              border: 'none',
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              backgroundColor: 'transparent',
+              color: theme.colors.secondary[200],
+              border: `1px solid ${theme.colors.secondary[700]}`,
               borderRadius: theme.borderRadius.md,
               fontSize: theme.typography.fontSize.sm,
               fontWeight: theme.typography.fontWeight.medium,
-              cursor: 'pointer',
-              transition: theme.transitions.fast
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '30';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '20';
+              cursor: 'pointer'
             }}
             title="View Claude API usage"
           >
-            🤖 Claude Usage
+            Claude Usage
           </button>
 
           <button
             onClick={() => setShowLeaderboard(true)}
             style={{
-              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-              backgroundColor: theme.colors.white + '20',
-              color: theme.colors.white,
-              border: 'none',
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              backgroundColor: 'transparent',
+              color: theme.colors.secondary[200],
+              border: `1px solid ${theme.colors.secondary[700]}`,
               borderRadius: theme.borderRadius.md,
               fontSize: theme.typography.fontSize.sm,
               fontWeight: theme.typography.fontWeight.medium,
-              cursor: 'pointer',
-              transition: theme.transitions.fast
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '30';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '20';
+              cursor: 'pointer'
             }}
             title="View leaderboard"
           >
-            🏆 Leaderboard
+            Leaderboard
           </button>
 
           <button
             onClick={() => setShowWelcome(true)}
             style={{
-              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-              backgroundColor: theme.colors.white + '20',
-              color: theme.colors.white,
-              border: 'none',
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              backgroundColor: 'transparent',
+              color: theme.colors.secondary[200],
+              border: `1px solid ${theme.colors.secondary[700]}`,
               borderRadius: theme.borderRadius.md,
               fontSize: theme.typography.fontSize.sm,
               fontWeight: theme.typography.fontWeight.medium,
-              cursor: 'pointer',
-              transition: theme.transitions.fast
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '30';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = theme.colors.white + '20';
+              cursor: 'pointer'
             }}
             title="Start a new session (Ctrl+N)"
           >
-            🆕 New Session
+            New Session
           </button>
           
           <div style={{
-            padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-            backgroundColor: theme.colors.white + '20',
+            padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+            backgroundColor: 'transparent',
             borderRadius: theme.borderRadius.md,
             fontSize: theme.typography.fontSize.sm,
-            fontWeight: theme.typography.fontWeight.medium
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.secondary[400],
+            border: `1px solid ${theme.colors.secondary[700]}`
           }}>
             {nodes.length} components • {edges.length} connections
           </div>
@@ -489,36 +560,23 @@ export default function App() {
             onClick={runSimulation}
             disabled={isSimulating || nodes.length === 0}
             style={{
-              padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+              padding: `${theme.spacing.md} ${theme.spacing.xl}`,
               backgroundColor: isSimulating 
-                ? theme.colors.gray[400] 
+                ? theme.colors.secondary[700] 
                 : nodes.length === 0 
-                  ? theme.colors.gray[300]
-                  : theme.colors.success[500],
+                  ? theme.colors.secondary[700]
+                  : theme.colors.primary[600],
               color: theme.colors.white,
               border: 'none',
               borderRadius: theme.borderRadius.lg,
               cursor: isSimulating || nodes.length === 0 ? 'not-allowed' : 'pointer',
               fontSize: theme.typography.fontSize.base,
               fontWeight: theme.typography.fontWeight.semibold,
-              boxShadow: theme.shadows.sm,
-              transition: theme.transitions.fast,
+              boxShadow: 'none',
               display: 'flex',
               alignItems: 'center',
               gap: theme.spacing.sm,
-              opacity: isSimulating || nodes.length === 0 ? 0.6 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (!isSimulating && nodes.length > 0) {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = theme.shadows.md;
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isSimulating && nodes.length > 0) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = theme.shadows.sm;
-              }
+              opacity: isSimulating || nodes.length === 0 ? 0.7 : 1
             }}
             title="Run simulation (Ctrl+R)"
           >
@@ -536,7 +594,6 @@ export default function App() {
               </>
             ) : (
               <>
-                <span>▶️</span>
                 Simulate System
               </>
             )}
@@ -548,58 +605,94 @@ export default function App() {
       <div style={{ 
         flex: 1, 
         display: 'flex',
-        backgroundColor: theme.colors.white,
-        margin: theme.spacing.md,
-        borderRadius: theme.borderRadius.xl,
-        boxShadow: theme.shadows.lg,
-        overflow: 'hidden'
+        backgroundColor: theme.colors.secondary[900],
+        margin: theme.spacing.lg,
+        borderRadius: theme.borderRadius['2xl'],
+        boxShadow: 'none',
+        overflow: 'hidden',
+        border: `1px solid ${theme.colors.secondary[700]}`,
+        position: 'relative'
       }}>
         {/* Left Panel - Challenges */}
         <div style={{ 
-          width: '320px', 
-          backgroundColor: theme.colors.gray[50], 
-          borderRight: `1px solid ${theme.colors.gray[200]}`,
+          width: `${leftPanelWidth}px`, 
+          backgroundColor: theme.colors.secondary[900], 
+          borderRight: `1px solid ${theme.colors.secondary[700]}`,
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          position: 'relative'
         }}>
+          
           <div style={{
-            padding: theme.spacing.lg,
-            borderBottom: `1px solid ${theme.colors.gray[200]}`,
-            backgroundColor: theme.colors.white
+            padding: theme.spacing.xl,
+            borderBottom: `1px solid ${theme.colors.secondary[700]}`,
+            backgroundColor: theme.colors.secondary[900],
+            position: 'relative',
+            zIndex: 1
           }}>
             <h2 style={{
               margin: 0,
-              fontSize: theme.typography.fontSize.lg,
-              fontWeight: theme.typography.fontWeight.semibold,
-              color: theme.colors.gray[900]
+              fontSize: theme.typography.fontSize.xl,
+              fontWeight: theme.typography.fontWeight.bold,
+              color: theme.colors.white
             }}>
-              🎯 Challenges
+              Challenges
             </h2>
             <p style={{
               margin: `${theme.spacing.sm} 0 0 0`,
               fontSize: theme.typography.fontSize.sm,
-              color: theme.colors.gray[600]
+              color: theme.colors.secondary[400]
             }}>
               Choose a scenario to design for
             </p>
           </div>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative', zIndex: 1 }}>
             <ChallengePanel
               challenges={sampleChallenges}
               selectedChallenge={selectedChallenge}
               onChallengeSelect={onChallengeSelect}
             />
           </div>
+          {/* Left Resizer */}
+          <div
+            onMouseDown={(e) => {
+              isResizingRef.current.side = 'left';
+              document.body.style.cursor = 'col-resize';
+              document.body.style.userSelect = 'none';
+              e.preventDefault();
+            }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: '-4px',
+              width: '8px',
+              height: '100%',
+              cursor: 'col-resize',
+              background: 'transparent',
+              borderRight: `1px solid ${theme.colors.secondary[700]}`
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLDivElement).style.background = 'rgba(59, 130, 246, 0.08)';
+              (e.currentTarget as HTMLDivElement).style.borderRightColor = theme.colors.primary[600];
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+              (e.currentTarget as HTMLDivElement).style.borderRightColor = theme.colors.secondary[700];
+            }}
+            title="Drag to resize"
+          />
         </div>
 
         {/* Center - Canvas */}
         <div style={{ 
           flex: 1, 
           position: 'relative',
-          backgroundColor: theme.colors.gray[50]
+          backgroundColor: theme.colors.secondary[900],
+          overflow: 'hidden'
         }}>
-          <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
+          
+          <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}>
             <ReactFlowProvider>
               <ReactFlow
                 nodes={nodes}
@@ -615,20 +708,37 @@ export default function App() {
                 onEdgeDoubleClick={onEdgeDoubleClick}
                 fitView
                 style={{
-                  backgroundColor: theme.colors.gray[50]
+                  background: 'transparent'
                 }}
+                nodeTypes={{}}
+                edgeTypes={{}}
+                minZoom={0.1}
+                maxZoom={2}
+                defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                nodesDraggable={true}
+                nodesConnectable={true}
+                elementsSelectable={true}
+                selectNodesOnDrag={true}
+                panOnDrag={[1, 2]}
+                zoomOnScroll={true}
+                zoomOnPinch={true}
+                panOnScroll={false}
+                preventScrolling={false}
+                deleteKeyCode={['Delete', 'Backspace']}
+                multiSelectionKeyCode={['Meta', 'Ctrl']}
               >
                 <Background 
-                  color={theme.colors.gray[300]}
+                  color={theme.colors.secondary[700]}
                   gap={20}
                   size={1}
+                  variant="dots"
                 />
                 <Controls 
                   style={{
-                    backgroundColor: theme.colors.white,
-                    border: `1px solid ${theme.colors.gray[200]}`,
-                    borderRadius: theme.borderRadius.md,
-                    boxShadow: theme.shadows.sm
+                    background: theme.colors.secondary[800],
+                    border: `1px solid ${theme.colors.secondary[700]}`,
+                    borderRadius: theme.borderRadius.lg,
+                    boxShadow: 'none'
                   }}
                 />
               </ReactFlow>
@@ -643,58 +753,62 @@ export default function App() {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               textAlign: 'center',
-              color: theme.colors.gray[500],
-              pointerEvents: 'none'
+              color: theme.colors.secondary[400],
+              pointerEvents: 'none',
+              zIndex: 2
             }}>
-              <div style={{
-                fontSize: '48px',
-                marginBottom: theme.spacing.md
-              }}>
-                🏗️
-              </div>
               <h3 style={{
                 margin: 0,
-                fontSize: theme.typography.fontSize.lg,
-                fontWeight: theme.typography.fontWeight.semibold,
-                color: theme.colors.gray[700]
+                fontSize: theme.typography.fontSize['2xl'],
+                fontWeight: theme.typography.fontWeight.bold,
+                color: theme.colors.white,
+                marginBottom: theme.spacing.sm
               }}>
                 Start Building Your System
               </h3>
               <p style={{
-                margin: `${theme.spacing.sm} 0 0 0`,
-                fontSize: theme.typography.fontSize.sm,
-                color: theme.colors.gray[500]
+                margin: `0 0 ${theme.spacing.lg} 0`,
+                fontSize: theme.typography.fontSize.base,
+                color: theme.colors.secondary[400],
+                maxWidth: '400px',
+                lineHeight: 1.6
               }}>
-                Drag components from the palette to begin designing
+                Drag components from the palette to begin designing your architecture
               </p>
               <div style={{
-                marginTop: theme.spacing.md,
-                padding: theme.spacing.md,
-                backgroundColor: theme.colors.primary[50],
-                borderRadius: theme.borderRadius.md,
-                border: `1px solid ${theme.colors.primary[200]}`
+                padding: theme.spacing.xl,
+                backgroundColor: theme.colors.secondary[900],
+                borderRadius: theme.borderRadius.xl,
+                border: `1px solid ${theme.colors.secondary[700]}`,
+                maxWidth: '500px',
+                margin: '0 auto'
               }}>
                 <h4 style={{
                   margin: 0,
-                  fontSize: theme.typography.fontSize.sm,
+                  fontSize: theme.typography.fontSize.lg,
                   fontWeight: theme.typography.fontWeight.semibold,
-                  color: theme.colors.gray[900],
-                  marginBottom: theme.spacing.xs
+                  color: theme.colors.white,
+                  marginBottom: theme.spacing.md,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: theme.spacing.sm
                 }}>
-                  💡 Quick Tips
+                  Quick Tips
                 </h4>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: theme.spacing.lg,
-                  fontSize: theme.typography.fontSize.xs,
-                  color: theme.colors.gray[600],
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: theme.spacing.sm,
+                  fontSize: theme.typography.fontSize.sm,
+                  color: theme.colors.secondary[300],
                   lineHeight: 1.5
                 }}>
-                  <li>Double-click components to delete them</li>
-                  <li>Double-click connections to remove them</li>
-                  <li>Press Delete key to remove selected component</li>
-                  <li>Click components to configure their settings</li>
-                </ul>
+                  <div>• Double-click to delete</div>
+                  <div>• Click to configure</div>
+                  <div>• Drag to connect</div>
+                  <div>• Press Delete to remove</div>
+                </div>
               </div>
             </div>
           )}
@@ -715,6 +829,35 @@ export default function App() {
           isSimulating={isSimulating}
           activeTab={activeRightTab}
           onTabChange={setActiveRightTab}
+          width={rightPanelWidth}
+        />
+        {/* Right Resizer */}
+        <div
+          onMouseDown={(e) => {
+            isResizingRef.current.side = 'right';
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            e.preventDefault();
+          }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: `${rightPanelWidth - 4}px`,
+            width: '8px',
+            height: '100%',
+            cursor: 'col-resize',
+            zIndex: 10,
+            borderLeft: `1px solid ${theme.colors.secondary[700]}`
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.background = 'rgba(59, 130, 246, 0.08)';
+            (e.currentTarget as HTMLDivElement).style.borderLeftColor = theme.colors.primary[600];
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+            (e.currentTarget as HTMLDivElement).style.borderLeftColor = theme.colors.secondary[700];
+          }}
+          title="Drag to resize"
         />
       </div>
 

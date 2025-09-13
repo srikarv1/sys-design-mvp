@@ -141,12 +141,12 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
 
   return (
     <div style={{ padding: '15px', height: '100%', overflowY: 'auto' }}>
-      <h3 style={{ marginBottom: '15px', color: '#333', fontSize: '16px' }}>
-        💥 Chaos Engineering
+      <h3 style={{ marginBottom: '15px', color: '#e2e8f0', fontSize: '16px' }}>
+        Chaos Engineering
       </h3>
       <p style={{ 
         fontSize: '12px', 
-        color: '#666', 
+        color: '#cbd5e1', 
         marginBottom: '15px',
         lineHeight: '1.4'
       }}>
@@ -156,31 +156,32 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
       {/* Active Events */}
       {activeEvents.length > 0 && (
         <div style={{ marginBottom: '15px' }}>
-          <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '12px' }}>
-            🔴 Active Events
+          <h4 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '12px' }}>
+            Active Events
           </h4>
           {activeEvents.map((event) => (
             <div key={event.id} style={{
               padding: '6px 8px',
-              backgroundColor: '#fff3cd',
-              border: '1px solid #ffeaa7',
-              borderRadius: '4px',
-              marginBottom: '4px',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              marginBottom: '6px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              fontSize: '11px'
+              fontSize: '11px',
+              color: '#e2e8f0'
             }}>
-              <span>{event.icon} {event.name}</span>
+              <span>{event.name}</span>
               <button
                 onClick={() => onEventStop(event.id)}
                 style={{
-                  padding: '2px 6px',
-                  backgroundColor: '#dc3545',
+                  padding: '4px 8px',
+                  backgroundColor: '#dc2626',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '3px',
-                  fontSize: '10px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
                   cursor: 'pointer'
                 }}
               >
@@ -193,8 +194,8 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
 
       {/* Event Library */}
       <div>
-        <h4 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '12px' }}>
-          🎯 Available Events
+        <h4 style={{ margin: '0 0 10px 0', color: '#e2e8f0', fontSize: '12px' }}>
+          Available Events
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {chaosEvents.map((event) => (
@@ -202,42 +203,43 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
               key={event.id}
               onClick={() => setSelectedEvent(event)}
               style={{
-                padding: '8px',
-                backgroundColor: isEventActive(event.id) ? '#d4edda' : '#f8f9fa',
-                border: isEventActive(event.id) ? '2px solid #28a745' : '1px solid #ddd',
-                borderRadius: '6px',
+                padding: '10px',
+                backgroundColor: isEventActive(event.id) ? '#052e16' : '#0f172a',
+                border: isEventActive(event.id) ? '1px solid #16a34a' : '1px solid #334155',
+                borderRadius: '8px',
                 cursor: isEventActive(event.id) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
                 fontSize: '11px',
-                opacity: isEventActive(event.id) ? 0.6 : 1
+                opacity: isEventActive(event.id) ? 0.7 : 1,
+                color: '#e2e8f0'
               }}
               onMouseEnter={(e) => {
                 if (!isEventActive(event.id)) {
-                  e.currentTarget.style.backgroundColor = '#e9ecef';
+                  e.currentTarget.style.backgroundColor = '#111827';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isEventActive(event.id)) {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
+                  e.currentTarget.style.backgroundColor = '#0f172a';
                 }
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                <div style={{ fontWeight: 'bold', color: '#333', fontSize: '10px' }}>
-                  {event.icon} {event.name}
+                <div style={{ fontWeight: 'bold', color: '#e2e8f0', fontSize: '10px' }}>
+                  {event.name}
                 </div>
                 <span style={{ 
                   padding: '1px 4px', 
                   backgroundColor: getSeverityColor(event.severity),
                   color: 'white',
-                  borderRadius: '2px',
+                  borderRadius: '3px',
                   fontSize: '9px',
                   fontWeight: 'bold'
                 }}>
                   {event.severity.toUpperCase()}
                 </span>
               </div>
-              <div style={{ fontSize: '9px', color: '#666', marginBottom: '3px' }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '3px' }}>
                 {event.description}
               </div>
               {!isEventActive(event.id) && (
@@ -247,12 +249,12 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
                     onEventTrigger(event);
                   }}
                   style={{
-                    padding: '2px 6px',
-                    backgroundColor: '#007bff',
+                    padding: '4px 8px',
+                    backgroundColor: '#2563eb',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '3px',
-                    fontSize: '9px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
                     cursor: 'pointer'
                   }}
                 >
@@ -279,23 +281,25 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
           zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
+            backgroundColor: '#0f172a',
             padding: '20px',
             borderRadius: '8px',
             maxWidth: '400px',
             width: '90%',
             maxHeight: '80%',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            border: '1px solid #334155',
+            color: '#e2e8f0'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, color: '#333' }}>
-                {selectedEvent.icon} {selectedEvent.name}
+              <h3 style={{ margin: 0, color: '#e2e8f0' }}>
+                {selectedEvent.name}
               </h3>
               <button
                 onClick={() => setSelectedEvent(null)}
                 style={{
                   padding: '4px 8px',
-                  backgroundColor: '#6c757d',
+                  backgroundColor: '#334155',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
@@ -306,13 +310,13 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
               </button>
             </div>
             
-            <p style={{ marginBottom: '15px', color: '#666', fontSize: '14px' }}>
+            <p style={{ marginBottom: '15px', color: '#94a3b8', fontSize: '14px' }}>
               {selectedEvent.description}
             </p>
 
             <div style={{ marginBottom: '15px' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px' }}>Effects:</h4>
-              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#666' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '14px' }}>Effects:</h4>
+              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#cbd5e1' }}>
                 {selectedEvent.effects.latencyMultiplier && (
                   <li>Latency increases by {(selectedEvent.effects.latencyMultiplier - 1) * 100}%</li>
                 )}
@@ -337,7 +341,7 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
                 style={{
                   width: '100%',
                   padding: '10px',
-                  backgroundColor: '#dc3545',
+                  backgroundColor: '#dc2626',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -346,7 +350,7 @@ const ChaosEvents: React.FC<ChaosEventsProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                🚨 Trigger Chaos Event
+                Trigger Chaos Event
               </button>
             )}
           </div>

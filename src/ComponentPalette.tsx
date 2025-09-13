@@ -24,16 +24,16 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
 
   return (
     <div style={{ 
-      padding: theme.spacing.lg, 
+      padding: theme.spacing.xl, 
       height: '100%', 
       overflowY: 'auto',
-      backgroundColor: theme.colors.gray[50]
+      background: 'transparent'
     }}>
       <p style={{ 
-        fontSize: theme.typography.fontSize.sm, 
-        color: theme.colors.gray[600], 
-        marginBottom: theme.spacing.lg,
-        lineHeight: 1.5
+        fontSize: theme.typography.fontSize.base, 
+        color: '#cbd5e1', 
+        marginBottom: theme.spacing.xl,
+        lineHeight: 1.6
       }}>
         Drag components to the canvas to build your system design
       </p>
@@ -41,20 +41,21 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
       {Object.entries(groupedComponents).map(([category, categoryComponents]) => (
         <div key={category} style={{ marginBottom: theme.spacing.lg }}>
           <h4 style={{ 
-            marginBottom: theme.spacing.sm, 
-            color: theme.colors.gray[900],
+            marginBottom: theme.spacing.md, 
+            color: theme.colors.white,
             textTransform: 'capitalize',
-            fontSize: theme.typography.fontSize.sm,
+            fontSize: theme.typography.fontSize.base,
             fontWeight: theme.typography.fontWeight.semibold,
             display: 'flex',
             alignItems: 'center',
             gap: theme.spacing.sm
           }}>
             <div style={{
-              width: '8px',
-              height: '8px',
+              width: '10px',
+              height: '10px',
               backgroundColor: categoryColors[category as keyof typeof categoryColors] || theme.colors.gray[500],
-              borderRadius: '50%'
+              borderRadius: '50%',
+              boxShadow: `0 0 8px ${categoryColors[category as keyof typeof categoryColors] || theme.colors.gray[500]}40`
             }} />
             {category}
           </h4>
@@ -65,28 +66,28 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
                 draggable
                 onDragStart={(event) => onDragStart(event, component.id)}
                 style={{
-                  padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+                  padding: `${theme.spacing.md} ${theme.spacing.lg}`,
                   background: `linear-gradient(135deg, ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]} 0%, ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]}dd 100%)`,
                   color: theme.colors.white,
-                  borderRadius: theme.borderRadius.lg,
+                  borderRadius: theme.borderRadius.xl,
                   cursor: 'grab',
                   border: 'none',
-                  fontSize: theme.typography.fontSize.sm,
+                  fontSize: theme.typography.fontSize.base,
                   fontWeight: theme.typography.fontWeight.medium,
-                  boxShadow: theme.shadows.sm,
-                  transition: theme.transitions.fast,
+                  boxShadow: `0 4px 12px ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]}30`,
+                  transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = theme.shadows.lg;
+                  e.currentTarget.style.boxShadow = `0 8px 24px ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]}50`;
                   e.currentTarget.style.cursor = 'grabbing';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = theme.shadows.sm;
+                  e.currentTarget.style.boxShadow = `0 4px 12px ${categoryColors[component.category as keyof typeof categoryColors] || theme.colors.gray[500]}30`;
                   e.currentTarget.style.cursor = 'grab';
                 }}
                 title={component.description}
@@ -96,7 +97,7 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({ components }) => {
                   fontSize: theme.typography.fontSize.xs,
                   opacity: 0.8
                 }}>
-                  →
+                  +
                 </span>
               </div>
             ))}
