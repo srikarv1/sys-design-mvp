@@ -1,5 +1,6 @@
 import { PlacedComponent, Connection, ComponentType, components, TrafficProfile } from './componentsSchema';
 import { Challenge } from './sampleChallenges';
+import { ChaosEvent } from './ChaosEvents';
 
 export interface SimulationResult {
   metrics: {
@@ -21,21 +22,23 @@ export interface SimulationResult {
 export interface SystemDesign {
   components: PlacedComponent[];
   connections: Connection[];
+  activeChaosEvents?: ChaosEvent[];
 }
 
 export const simulate = (challenge: Challenge, design: SystemDesign): SimulationResult => {
-  const { components: placedComponents, connections } = design;
+  const { components: placedComponents, connections, activeChaosEvents = [] } = design;
   const traffic = challenge.trafficProfile;
   
   // Calculate metrics
-  const metrics = calculateMetrics(placedComponents, connections, traffic, challenge);
+  const metrics = calculateMetrics(placedComponents, connections, traffic, challenge, activeChaosEvents);
   
   // Calculate score based on rubric
   const { score, feedback, violations, recommendations } = calculateScore(
     challenge, 
     placedComponents, 
     connections, 
-    metrics
+    metrics,
+    activeChaosEvents
   );
 
   return {
@@ -48,22 +51,30 @@ export const simulate = (challenge: Challenge, design: SystemDesign): Simulation
 };
 
 function calculateMetrics(
-  components: PlacedComponent[], 
+  placedComponents: PlacedComponent[], 
   connections: Connection[], 
   traffic: TrafficProfile,
-  challenge: Challenge
+  challenge: Challenge,
+  activeChaosEvents: ChaosEvent[]
 ) {
-  // Calculate latency through the system
-  const latency = calculateLatency(components, connections, traffic);
-  
-  // Calculate availability
-  const availability = calculateAvailability(components, connections);
-  
-  // Calculate cost
-  const cost = calculateCost(components, traffic);
-  
-  // Calculate throughput (simplified)
-  const throughput = calculateThroughput(components, connections, traffic);
+  // Calculate base metrics
+  let latency = calculateLatency(placedComponents, connections, traffic);
+  let availability = calculateAvailability(placedComponents, connections);
+  let cost = calculateCost(placedComponents, traffic);
+  let throughput = calculateThroughput(placedComponents, connections, traffic);
+
+  // Apply chaos event effects
+  activeChaosEvents.forEach(event => {
+    if (event.effects.latencyMultiplier) {
+      latency *= event.effects.latencyMultiplier;
+    }
+    if (event.effects.availabilityReduction) {
+      availability *= (1 - event.effects.availabilityReduction);
+    }
+    if (event.effects.costMultiplier) {
+      cost *= event.effects.costMultiplier;
+    }
+  });
 
   return {
     latency: {
@@ -78,20 +89,20 @@ function calculateMetrics(
 }
 
 function calculateLatency(
-  components: PlacedComponent[], 
+  placedComponents: PlacedComponent[], 
   connections: Connection[], 
   traffic: TrafficProfile
 ): number {
-  if (components.length === 0) return 1000; // High penalty for empty design
+  if (placedComponents.length === 0) return 1000; // High penalty for empty design
 
   // Find the main path through the system
-  const mainPath = findMainPath(components, connections);
+  const mainPath = findMainPath(placedComponents, connections);
   if (mainPath.length === 0) return 1000;
 
   let totalLatency = 0;
   
   for (const componentId of mainPath) {
-    const component = components.find(c => c.id === componentId);
+    const component = placedComponents.find(c => c.id === componentId);
     if (!component) continue;
     
     const componentType = components.find(ct => ct.id === component.typeId);
@@ -107,13 +118,13 @@ function calculateLatency(
 }
 
 function calculateAvailability(
-  components: PlacedComponent[], 
+  placedComponents: PlacedComponent[], 
   connections: Connection[]
 ): number {
-  if (components.length === 0) return 0;
+  if (placedComponents.length === 0) return 0;
 
   // Calculate availability for each component
-  const componentAvailabilities = components.map(component => {
+  const componentAvailabilities = placedComponents.map(component => {
     const componentType = components.find(ct => ct.id === component.typeId);
     if (!componentType) return 0.5; // Default low availability for unknown components
     
@@ -125,8 +136,8 @@ function calculateAvailability(
   return componentAvailabilities.reduce((acc, avail) => acc * avail, 1);
 }
 
-function calculateCost(components: PlacedComponent[], traffic: TrafficProfile): number {
-  return components.reduce((total, component) => {
+function calculateCost(placedComponents: PlacedComponent[], traffic: TrafficProfile): number {
+  return placedComponents.reduce((total, component) => {
     const componentType = components.find(ct => ct.id === component.typeId);
     if (!componentType) return total;
     
@@ -135,12 +146,12 @@ function calculateCost(components: PlacedComponent[], traffic: TrafficProfile): 
 }
 
 function calculateThroughput(
-  components: PlacedComponent[], 
+  placedComponents: PlacedComponent[], 
   connections: Connection[], 
   traffic: TrafficProfile
 ): number {
   // Simplified throughput calculation
-  const bottleneckComponent = components.reduce((min, component) => {
+  const bottleneckComponent = placedComponents.reduce((min, component) => {
     const componentType = components.find(ct => ct.id === component.typeId);
     if (!componentType) return min;
     
@@ -151,9 +162,9 @@ function calculateThroughput(
   return Math.min(traffic.rps, bottleneckComponent);
 }
 
-function findMainPath(components: PlacedComponent[], connections: Connection[]): string[] {
+function findMainPath(placedComponents: PlacedComponent[], connections: Connection[]): string[] {
   // Simple heuristic: find the longest path from input to output
-  const inputComponents = components.filter(c => 
+  const inputComponents = placedComponents.filter(c => 
     components.find(ct => ct.id === c.typeId)?.category === 'edge'
   );
   
@@ -179,9 +190,10 @@ function findMainPath(components: PlacedComponent[], connections: Connection[]):
 
 function calculateScore(
   challenge: Challenge,
-  components: PlacedComponent[],
+  placedComponents: PlacedComponent[],
   connections: Connection[],
-  metrics: any
+  metrics: any,
+  activeChaosEvents: ChaosEvent[]
 ): { score: number; feedback: string[]; violations: string[]; recommendations: string[] } {
   let score = 0;
   const feedback: string[] = [];
@@ -189,7 +201,7 @@ function calculateScore(
   const recommendations: string[] = [];
 
   // Check must-haves
-  const componentTypes = components.map(c => 
+  const componentTypes = placedComponents.map(c => 
     components.find(ct => ct.id === c.typeId)?.name || ''
   );
   
@@ -237,6 +249,14 @@ function calculateScore(
     violations.push(`Budget exceeded: $${metrics.cost.toFixed(0)} > $${challenge.budget}`);
   }
 
+  // Chaos event feedback
+  if (activeChaosEvents.length > 0) {
+    feedback.push(`🧪 Testing with ${activeChaosEvents.length} chaos event(s)`);
+    activeChaosEvents.forEach(event => {
+      feedback.push(`💥 ${event.name}: ${event.description}`);
+    });
+  }
+
   // Generate recommendations
   if (metrics.latency.p95 > challenge.sla.maxLatency) {
     recommendations.push('Consider adding more replicas or caching layers to reduce latency');
@@ -246,6 +266,12 @@ function calculateScore(
   }
   if (metrics.cost > challenge.budget) {
     recommendations.push('Optimize component sizing or consider more cost-effective alternatives');
+  }
+
+  // Chaos-specific recommendations
+  if (activeChaosEvents.length > 0) {
+    recommendations.push('💡 Consider adding circuit breakers and bulkheads for better resilience');
+    recommendations.push('🔄 Implement graceful degradation strategies for failure scenarios');
   }
 
   // Ensure score is between 0 and 100

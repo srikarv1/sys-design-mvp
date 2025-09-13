@@ -1,13 +1,33 @@
-# System Design Simulator
+# 🏗️ System Design Simulator
 
-A drag-and-drop system design simulator for interview preparation. Build, simulate, and learn system design patterns through interactive challenges.
+A browser-based sandbox for learning system design through interactive drag-and-drop components and real-time simulation. Build systems, test resilience, and master the trade-offs between scalability, cost, and reliability.
 
-## Features
+## ✨ Features
 
-### 🎯 Interactive Learning
-- **Drag & Drop Interface**: Build system designs by dragging components onto the canvas
-- **Real-time Simulation**: See metrics change as you add/remove components
-- **Instant Feedback**: Get immediate scores and recommendations
+### 🎯 **Interactive System Building**
+- **Drag & Drop Components**: API Gateway, Load Balancer, Web Apps, Databases, Caches, Queues, CDNs, and more
+- **Visual Connection Validation**: Green for valid connections, red for invalid ones with tooltips
+- **Component Configuration**: Adjust replicas, sizes, regions, and other parameters in real-time
+
+### 📊 **Real-Time Metrics & Scoring**
+- **Live Performance Metrics**: Latency (P50/P95/P99), availability, cost, and throughput
+- **Intelligent Scoring**: Rubric-based evaluation with detailed feedback
+- **SLA Compliance**: Track against latency and availability requirements
+
+### 🎛️ **What-If Analysis**
+- **Traffic Sliders**: Adjust RPS, read/write ratios, payload sizes, and peak multipliers
+- **Instant Feedback**: See how metrics change as you modify traffic patterns
+- **Cost Optimization**: Find the sweet spot between performance and budget
+
+### 💥 **Chaos Engineering**
+- **Failure Simulation**: Test resilience with realistic failure scenarios
+- **Chaos Events**: AZ outages, cache miss storms, database failovers, network partitions
+- **Resilience Testing**: See how your system handles real-world failures
+
+### 🎮 **Gamified Learning**
+- **Progressive Challenges**: From simple image sharing to complex social media feeds
+- **Level-Based Difficulty**: Beginner to expert challenges
+- **Achievement System**: Unlock new components and scenarios
 
 ### 🧩 Component Library
 - **API Gateway**: Entry point with rate limiting and routing
@@ -33,28 +53,28 @@ A drag-and-drop system design simulator for interview preparation. Build, simula
 - **Requirements Tracking**: Must-have components and anti-pattern detection
 - **Hints & Guidance**: Contextual help for each challenge
 
-## Getting Started
+## 🚀 Getting Started
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# Install dependencies
+npm install
 
-2. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
+# Start development server
+npm run dev
 
-3. **Open in Browser**
-   Navigate to `http://localhost:5173`
+# Build for production
+npm run build
+```
 
-## How to Use
+## 🎯 How to Play
 
-1. **Select a Challenge**: Choose from the available challenges in the left panel
-2. **Drag Components**: Drag components from the palette to the canvas
-3. **Connect Components**: Draw connections between components to define data flow
-4. **Run Simulation**: Click "Run Simulation" to see metrics and get feedback
-5. **Iterate & Improve**: Use feedback to optimize your design and improve your score
+1. **Select a Challenge**: Choose from different system design scenarios
+2. **Build Your System**: Drag components from the palette to the canvas
+3. **Connect Components**: Draw connections between components (valid connections are green)
+4. **Configure Components**: Click on components to adjust their parameters
+5. **Test Traffic**: Use sliders to simulate different load patterns
+6. **Inject Chaos**: Trigger failure scenarios to test resilience
+7. **Analyze Results**: Review metrics, scoring, and recommendations
 
 ## Challenge Examples
 
