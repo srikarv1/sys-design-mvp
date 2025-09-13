@@ -2,6 +2,8 @@
 
 A browser-based sandbox for learning system design through interactive drag-and-drop components and real-time simulation. Build systems, test resilience, and master the trade-offs between scalability, cost, and reliability.
 
+Check out the site here: https://sys-design-hackcmu.vercel.app
+
 ## ✨ Features
 
 ### 🎯 **Interactive System Building**
